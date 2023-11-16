@@ -23,7 +23,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.1", latest_version,
+string current_version = "3.9.4.2", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -32,6 +32,8 @@ download_url_0_1_rus = "https://base-escape.ru/downloads/base_escape_0.1_rus.exe
 
 //АЛЬФА-тест
 bool test = false;
+//режим разработчика
+bool developer_mod = false;
 
 //коды
 string
@@ -110,7 +112,6 @@ bool exit_cycle = true;
 bool migration = false;
 bool game_data_delited = false;
 bool to_menu1 = false, to_menu2 = false, to_menu3 = false, to_menu4 = false, to_menu5 = false;
-string mig_save, mig_qsave, mig_key, mig_travel;
 string off_on;
 string  end_code1, travel_code, code;
 int ndeath = 0, infection_stage = 0, nhelp = 0, qhelp = 0,
@@ -339,6 +340,7 @@ void soc_netw();
 void save(int s);
 void read_qsave();
 void temp_data(int doing);
+void create_folder();
 void hide_mouse_cursor();
 void show_mouse_cursor();
 void hide_cursor();
@@ -431,14 +433,19 @@ bool check_for_updates() {
 				<< "|\033[0m            Press any key to continue...       \033[36m|\n"
 				<< "|===============================================|\033[0m";
 			int check_again = _getch();
-			if (check_again == 32) {
-				GetCursorPos(&p);
-				if (check_for_updates())
-					return true;
-				else
-					return false;
-			}
 			hide_mouse_cursor();
+			if (check_again == 32) {
+				if (check_for_updates()) {
+					system("cls");
+					cout << loading_string;
+					return true;
+				}
+				else {
+					system("cls");
+					cout << loading_string;
+					return false;
+				}
+			}
 			system("cls");
 			cout << loading_string;
 			return true;
@@ -453,14 +460,19 @@ bool check_for_updates() {
 			<< "|\033[0m            Press any key to continue...       \033[36m|\n"
 			<< "|===============================================|\033[0m";
 		int check_again = _getch();
-		if (check_again == 32) {
-			GetCursorPos(&p);
-			if (check_for_updates())
-				return true;
-			else
-				return false;
-		}
 		hide_mouse_cursor();
+		if (check_again == 32) {
+			if (check_for_updates()) {
+				system("cls");
+				cout << loading_string;
+				return true;
+			}
+			else {
+				system("cls");
+				cout << loading_string;
+				return false;
+			}
+		}
 		system("cls");
 		cout << loading_string;
 		return true;
@@ -544,12 +556,12 @@ int main() {
 #endif
 		LPCWSTR mutexName = L"Base_Escape_Unique_Mutex";
 		hMutex = CreateMutex(NULL, TRUE, mutexName);
-		if (GetLastError() == ERROR_ALREADY_EXISTS)
-			return 0;
+		if (!developer_mod) {
+			if (GetLastError() == ERROR_ALREADY_EXISTS)
+				return 0;
+		}
 	}
 	int alpha;
-	srand(static_cast<unsigned int>(time(NULL)));
-	setlocale(LC_CTYPE, "rus");
 	time_t now = time(nullptr);
 	tm local_time;
 	localtime_s(&local_time, &now);
@@ -560,69 +572,74 @@ int main() {
 	if (ndeath != 0)
 		temp_data(0);
 	if (first_start) {
-		if (!migration) {
-#ifdef _WIN64
-			CreateDirectoryW(L"C:\\Program Files (x86)\\BaseEscapeData", NULL);
-#else
-			CreateDirectoryW(L"C:\\Program Files\\BaseEscapeData", NULL);
-#endif
-			ifstream old_save(L"C:\\Windows\\Temp\\save.txt");
-			if (old_save.is_open()) {
-				old_save >> mig_save;
-				old_save.close();
-				remove("C:\\Windows\\Temp\\save.txt");
-				string ofstr_save = folder + "save.txt";
-				ofstream new_save(ofstr_save);
-				if (new_save.is_open()) {
-					new_save << mig_save;
-					new_save.close();
-				}
+		ifstream old_save(L"C:\\Windows\\Temp\\save.txt");
+		if (old_save.is_open()) {
+			old_save.close();
+			migration = true;
+			remove("C:\\Windows\\Temp\\save.txt");
+		}
+		ifstream old_qsave(L"C:\\Windows\\Temp\\qsave.txt");
+		if (old_qsave.is_open()) {
+			old_qsave.close();
+			migration = true;
+			remove("C:\\Windows\\Temp\\qsave.txt");
+		}
+		ifstream old_key(L"C:\\Windows\\Temp\\key.txt");
+		if (old_key.is_open()) {
+			old_key.close();
+			migration = true;
+			remove("C:\\Windows\\Temp\\key.txt");
+		}
+		ifstream old_travel(L"C:\\Windows\\Temp\\travel.txt");
+		if (old_travel.is_open()) {
+			old_travel.close();
+			migration = true;
+			remove("C:\\Windows\\Temp\\travel.txt");
+		}
+		if (migration) {
+			hide_mouse_cursor();
+			system("cls");
+			cout << "YOUR FILES ARE OUT OF DATE...\n";
+			for (int i = 0; i < 3 + rand() % 3; i++) {
+				cout << "\rDELETING IN PROGRESS.  " << flush;
+				pause(350);
+				cout << "\rDELETING IN PROGRESS.. " << flush;
+				pause(350);
+				cout << "\rDELETING IN PROGRESS..." << flush;
+				pause(350);
 			}
-			ifstream old_qsave(L"C:\\Windows\\Temp\\qsave.txt");
-			if (old_qsave.is_open()) {
-				old_qsave >> mig_qsave;
-				old_qsave.close();
-				remove("C:\\Windows\\Temp\\qsave.txt");
-				ofstream new_qsave(L"C:\\Program Files\\BaseEscapeData\\qsave.txt");
-				if (new_qsave.is_open()) {
-					new_qsave << mig_qsave;
-					new_qsave.close();
-				}
-			}
-			ifstream old_key(L"C:\\Windows\\Temp\\key.txt");
-			if (old_key.is_open()) {
-				old_key >> mig_key;
-				old_key.close();
-				remove("C:\\Windows\\Temp\\key.txt");
-				string ofstr_key = folder + "key.txt";
-				ofstream new_key(ofstr_key);
-				if (new_key.is_open()) {
-					new_key << mig_key;
-					new_key.close();
-				}
-			}
-			ifstream old_travel(L"C:\\Windows\\Temp\\travel.txt");
-			if (old_travel.is_open()) {
-				old_travel >> mig_travel;
-				old_travel.close();
-				remove("C:\\Windows\\Temp\\travel.txt");
-				string ofstr_travel = folder + "travel.txt";
-				ofstream new_travel(ofstr_travel);
-				if (new_travel.is_open()) {
-					new_travel << mig_travel;
-					new_travel.close();
-				}
-			}
+			create_folder();
+			cout << "\nFILES HAVE BEEN DELETED SUCCESSFULLY...";
+			pause(2000);
+			show_mouse_cursor();
 		}
 		string ofstr_achiventments = folder + "qsave.txt";
 		ifstream achievements(ofstr_achiventments);
 		if (achievements.is_open()) {
 			achievements.close();
-			remove(ofstr_achiventments.c_str());
+			hide_mouse_cursor();
+			system("cls");
+			cout << "ACHIEVEMENTS FILE IS NOT CURRENT!\n";
+			if (remove(ofstr_achiventments.c_str()) != 0)
+				cout << "\033[31mERROR 404\033[0m" << endl;
+			else {
+				for (int i = 0; i < 3 + rand() % 3; i++) {
+					cout << "\rDELETING IN PROGRESS.  " << flush;
+					pause(300);
+					cout << "\rDELETING IN PROGRESS.. " << flush;
+					pause(300);
+					cout << "\rDELETING IN PROGRESS..." << flush;
+					pause(300);
+				}
+				cout << "\nACHIEVEMENT FILE WAS SUCCESSFULLY DELETED!";
+			}
+			pause(2000);
+			show_mouse_cursor();
 		}
 		string ofstr_achiventments_ini = folder + "qsave.ini";
 		INIReader reader(ofstr_achiventments_ini);
 		if (reader.ParseError() < 0) {
+			create_folder();
 			ofstream res_achievements(ofstr_achiventments_ini);
 			if (res_achievements.is_open()) {
 				string res_achiventment = "[Achiventments]\n";
@@ -842,114 +859,116 @@ int main() {
 		while (now_loading) {
 			string loading_prodress;
 			rand_loading = 1 + rand() % 10;
-			if (loading >= 5 && loading <= 30) {
-				if (!IsUserAnAdmin()) {
-					int exi1;
-					system("cls");
-					cout << "\033[36m|======= \033[31mNo Administrator \033[36m=======|\n"		\
-						"|\033[0mRun Base_Escape as Administrator\033[36m|\n"				\
-						"|\033[33mPress any key to exit...        \033[36m|\n"				\
-						"|================================|\033[0m" << endl;
-					exi1 = _getch();
-					exit(0);
-				}
-			}
-			if (loading >= 30 && !dont_did) {
-				if (!IsInternetConnected()) {
-					show_mouse_cursor();
-					for (int i = 0; i != 1;) {
-						int no_inet;
+			if (!developer_mod) {
+				if (loading >= 5 && loading <= 30) {
+					if (!IsUserAnAdmin()) {
+						int exi1;
 						system("cls");
-						cout << "\033[36m|============== \033[31mNo internet connection! \033[36m==============|\n"		\
-							"|\033[0mPlease check your network connection and try again...\033[36m|\n"				\
-							"|\033[0m Try again: Space                          Exit: ESC \033[36m|\n"				\
-							"|=====================================================|\033[0m";
-						no_inet = _getch();
-						switch (no_inet) {
-						case 32:
-							system("cls");
-							cout << "Checking for Network...\n";
-							pause(1000);
-							if (IsInternetConnected()) {
-								hide_mouse_cursor();
-								system("cls");
-								cout << "WW   WW  EEEEE  LL       CCCC    OOOO   MM   MM  EEEEE\n"	\
-									"WW   WW  EE     LL      CC  CC  OO  OO  MMM MMM  EE\n"			\
-									"WW W WW  EEEE   LL      CC      OO  OO  MM M MM  EEEE\n"		\
-									"WWWWWWW  EE     LL      CC  CC  OO  OO  MM   NN  EE\n"			\
-									" WW WW   EEEEE  LLLLLL   CCCC    OOOO   MM   MM  EEEEE"		\
-									<< endl << endl << \
-									"IIIIII  NN  NN\n"												\
-									"  II    NNN NN\n"												\
-									"  II    NN NNN\n"												\
-									"  II    NN  NN\n"												\
-									"IIIIII  NN  NN"												\
-									<< endl << endl << \
-									"BBBBB    AAAA    SSSS   EEEEE\n"								\
-									"BB  BB  AA  AA  SS      EE\n"									\
-									"BBBBB   AAAAAA   SSSS   EEEE\n"								\
-									"BB  BB  AA  AA      SS  EE\n"									\
-									"BBBBB   AA  AA   SSSS   EEEEE"									\
-									<< endl << endl << \
-									"EEEEE   SSSS    CCCC    AAAA   PPPPP   EEEEE\n"				\
-									"EE     SS      CC  CC  AA  AA  PP  PP  EE\n"					\
-									"EEEE    SSSS   CC      AAAAAA  PPPPP   EEEE\n"					\
-									"EE         SS  CC  CC  AA  AA  PP      EE\n"					\
-									"EEEEE   SSSS    CCCC   AA  AA  PP      EEEEE"					\
-									<< endl << endl << \
-									"VV  VV   3333        9999\n"									\
-									"VV  VV  3   33      99  99\n"									\
-									"VV  VV    333        99999\n"									\
-									" VVVV   3   33          99\n"									\
-									"  VV     3333   **   9999"										\
-									<< endl;
-								i++;
-							}
-							else {
-								cout << "\033[31mNo internet connection!\033[0m";
-								pause(1000);
-							}
-							break;
-						case 27:
-							exit(0);
-							break;
-						}
+						cout << "\033[36m|======= \033[31mNo Administrator \033[36m=======|\n"		\
+							"|\033[0mRun Base_Escape as Administrator\033[36m|\n"				\
+							"|\033[33mPress any key to exit...        \033[36m|\n"				\
+							"|================================|\033[0m" << endl;
+						exi1 = _getch();
+						exit(0);
 					}
 				}
-				else {
-					if (!test) {
-						if (local_time.tm_year <= 2099) {
-							if (!check_for_updates()) {
-								show_mouse_cursor();
-								int updet_chek;
-								while (true) {
+				if (loading >= 30 && !dont_did) {
+					if (!IsInternetConnected()) {
+						show_mouse_cursor();
+						for (int i = 0; i != 1;) {
+							int no_inet;
+							system("cls");
+							cout << "\033[36m|============== \033[31mNo internet connection! \033[36m==============|\n"		\
+								"|\033[0mPlease check your network connection and try again...\033[36m|\n"				\
+								"|\033[0m Try again: Space                          Exit: ESC \033[36m|\n"				\
+								"|=====================================================|\033[0m";
+							no_inet = _getch();
+							switch (no_inet) {
+							case 32:
+								system("cls");
+								cout << "Checking for Network...\n";
+								pause(1000);
+								if (IsInternetConnected()) {
+									hide_mouse_cursor();
 									system("cls");
-									cout << "\033[36m|======== \033[31mThe version is not up to date \033[36m========|\n"	\
-										"|\033[33m  Your version of Base_Escape is out of date!  \033[36m|\n"				\
-										"|\033[0mPlease update Base_Escape to the latest version\033[36m|\n"				\
-										"|\033[0m Download update: Space            Cancel: ESC \033[36m|\n"
-										"|===============================================|\033[0m";
-									updet_chek = _getch();
-									switch (updet_chek) {
-									case 32:
+									cout << "WW   WW  EEEEE  LL       CCCC    OOOO   MM   MM  EEEEE\n"	\
+										"WW   WW  EE     LL      CC  CC  OO  OO  MMM MMM  EE\n"			\
+										"WW W WW  EEEE   LL      CC      OO  OO  MM M MM  EEEE\n"		\
+										"WWWWWWW  EE     LL      CC  CC  OO  OO  MM   NN  EE\n"			\
+										" WW WW   EEEEE  LLLLLL   CCCC    OOOO   MM   MM  EEEEE"		\
+										<< endl << endl << \
+										"IIIIII  NN  NN\n"												\
+										"  II    NNN NN\n"												\
+										"  II    NN NNN\n"												\
+										"  II    NN  NN\n"												\
+										"IIIIII  NN  NN"												\
+										<< endl << endl << \
+										"BBBBB    AAAA    SSSS   EEEEE\n"								\
+										"BB  BB  AA  AA  SS      EE\n"									\
+										"BBBBB   AAAAAA   SSSS   EEEE\n"								\
+										"BB  BB  AA  AA      SS  EE\n"									\
+										"BBBBB   AA  AA   SSSS   EEEEE"									\
+										<< endl << endl << \
+										"EEEEE   SSSS    CCCC    AAAA   PPPPP   EEEEE\n"				\
+										"EE     SS      CC  CC  AA  AA  PP  PP  EE\n"					\
+										"EEEE    SSSS   CC      AAAAAA  PPPPP   EEEE\n"					\
+										"EE         SS  CC  CC  AA  AA  PP      EE\n"					\
+										"EEEEE   SSSS    CCCC   AA  AA  PP      EEEEE"					\
+										<< endl << endl << \
+										"VV  VV   3333        9999\n"									\
+										"VV  VV  3   33      99  99\n"									\
+										"VV  VV    333        99999\n"									\
+										" VVVV   3   33          99\n"									\
+										"  VV     3333   **   9999"										\
+										<< endl;
+									i++;
+								}
+								else {
+									cout << "\033[31mNo internet connection!\033[0m";
+									pause(1000);
+								}
+								break;
+							case 27:
+								exit(0);
+								break;
+							}
+						}
+					}
+					else {
+						if (!test) {
+							if (local_time.tm_year <= 2099) {
+								if (!check_for_updates()) {
+									show_mouse_cursor();
+									int updet_chek;
+									while (true) {
 										system("cls");
-										cout << "Downloading the new version of Base_Escape...\n"
-											"\033[33mCurrent version: \033[31mv" << current_version << endl <<
-											"\033[33mActual version:  \033[32mv" << latest_version << endl;
-										cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
-										downloaded_file = "Base_escape_setup.exe";
-										download_file(download_url);
-										exit(0);
-										break;
-									case 27:
-										exit(0);
-										break;
+										cout << "\033[36m|======== \033[31mThe version is not up to date \033[36m========|\n"	\
+											"|\033[33m  Your version of Base_Escape is out of date!  \033[36m|\n"				\
+											"|\033[0mPlease update Base_Escape to the latest version\033[36m|\n"				\
+											"|\033[0m Download update: Space            Cancel: ESC \033[36m|\n"
+											"|===============================================|\033[0m";
+										updet_chek = _getch();
+										switch (updet_chek) {
+										case 32:
+											system("cls");
+											cout << "Downloading the new version of Base_Escape...\n"
+												"\033[33mCurrent version: \033[31mv" << current_version << endl <<
+												"\033[33mActual version:  \033[32mv" << latest_version << endl;
+											cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+											downloaded_file = "Base_escape_setup.exe";
+											download_file(download_url);
+											exit(0);
+											break;
+										case 27:
+											exit(0);
+											break;
+										}
 									}
 								}
 							}
 						}
+						dont_did = true;
 					}
-					dont_did = true;
 				}
 			}
 			pause(rand() % 300);
@@ -982,6 +1001,7 @@ int main() {
 		string ofstr_config = folder + "config.ini";
 		INIReader reader_settings(ofstr_config);
 		if (reader_settings.ParseError() < 0) {
+			create_folder();
 			ofstream config_ini(ofstr_config);
 			if (config_ini.is_open()) {
 				LCID sysLocale = GetSystemDefaultLCID();
@@ -1205,20 +1225,16 @@ void save() {
 	ifstream file(ifstr);
 	if (!file.is_open()) {
 		for (int i = 0; i < load; i++) {
-			cout << "LOADING SAVE.";
+			cout << "\rLOADING SAVE.  " << flush;
 			pause(200);
-			system("cls");
-			cout << "LOADING SAVE..";
+			cout << "\rLOADING SAVE.. " << flush;
 			pause(200);
-			system("cls");
-			cout << "LOADING SAVE...";
+			cout << "\rLOADING SAVE..." << flush;
 			pause(200);
-			system("cls");
 		}
-		cout << "SAVE FILE MISSING!!";
+		cout << "\n\033[31mSAVE FILE MISSING!\033[0m";
 		pause(1000);
 		show_mouse_cursor();
-		start();
 	}
 	else {
 		if (Language) {
@@ -1413,23 +1429,21 @@ void save() {
 		else {
 			string ofstr = folder + "save.txt";
 			if (remove(ofstr.c_str()) != 0)
-				cout << "ERROR 404" << endl;
-			else
+				cout << "\033[31mERROR 404\033[0m" << endl;
+			else {
+				cout << "SAVE FILE IS DAMAGED!\n";
 				for (int i = 0; i < load; i++) {
-					cout << "SAVE SYSTEM HAS BEEN UPDATED\nYOUR SAVE FILE IS NO LONGER COMPATIBLE\nDELETING.";
-					pause(200);
-					system("cls");
-					cout << "SAVE SYSTEM HAS BEEN UPDATED\nYOUR SAVE FILE IS NO LONGER COMPATIBLE\nDELETING..";
-					pause(200);
-					system("cls");
-					cout << "SAVE SYSTEM HAS BEEN UPDATED\nYOUR SAVE FILE IS NO LONGER COMPATIBLE\nDELETING...";
-					pause(200);
-					system("cls");
+					cout << "\rDELETE IN PROGRESS.  " << flush;
+					pause(300);
+					cout << "\rDELETE IN PROGRESS.. " << flush;
+					pause(300);
+					cout << "\rDELETE IN PROGRESS..." << flush;
+					pause(300);
 				}
-			cout << "DELETE SUCCESSFUL!";
-			pause(1000);
+				cout << "\nDELETED SUCCESSFULLY!";
+			}
+			pause(2000);
 			show_mouse_cursor();
-			start();
 		}
 	}
 }
@@ -1765,8 +1779,7 @@ void location(int loc) {
 //цикл подвала
 void cycle1() {
 	int next;
-	bool in_cycle = true;
-	while (in_cycle) {
+	while (true) {
 		nmoves++;
 		system("cls");
 		if (!to_basement) {
@@ -1918,7 +1931,6 @@ void cycle1() {
 			}
 			to_basement = false;
 		}
-		in_cycle = false;
 		switch (_getch()) {
 		case '1':
 			location(1);
@@ -1936,7 +1948,6 @@ void cycle1() {
 			location(5);
 			break;
 		case 'x':
-			in_cycle = true;
 			if (nhelp > 0) {
 				nmoves++;
 				system("cls");
@@ -2069,9 +2080,6 @@ void cycle1() {
 					continue;
 				}
 			}
-			break;
-		default:
-			in_cycle = true;
 			break;
 		}
 	}
@@ -2624,7 +2632,7 @@ void door() {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-				"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+				"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 				"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 				"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 				"|===================================================================|\033[0m";
@@ -2670,6 +2678,7 @@ void door() {
 	}
 	if (save == 1) {
 		system("cls");
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (file.is_open()) {
@@ -4288,7 +4297,7 @@ void mansion() {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-				"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+				"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 				"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 				"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 				"|===================================================================|\033[0m";
@@ -4331,6 +4340,7 @@ void mansion() {
 	}
 	if (save == 1) {
 		system("cls");
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (file.is_open()) {
@@ -4486,7 +4496,7 @@ void gate() {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-				"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+				"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 				"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 				"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 				"|===================================================================|\033[0m";
@@ -4527,6 +4537,7 @@ void gate() {
 		}
 		if (sav == 1) {
 			system("cls");
+			create_folder();
 			string ofstr = folder + "save.txt";
 			ofstream file(ofstr);
 			if (file.is_open()) {
@@ -5183,7 +5194,7 @@ void ladder() {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-				"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+				"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 				"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 				"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 				"|===================================================================|\033[0m";
@@ -5226,6 +5237,7 @@ void ladder() {
 	}
 	if (save == 1) {
 		system("cls");
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (file.is_open()) {
@@ -6714,7 +6726,7 @@ void forest() {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-					"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+					"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 					"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 					"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 					"|===================================================================|\033[0m";
@@ -7143,7 +7155,7 @@ void left() {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 			"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-			"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+			"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 			"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 			"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 			"|===================================================================|\033[0m";
@@ -7184,6 +7196,7 @@ void left() {
 	}
 	if (save == 1) {
 		system("cls");
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (!isHasTrap) {
@@ -7197,6 +7210,7 @@ void left() {
 			}
 		}
 		if (isHasTrap) {
+			create_folder();
 			ofstream file2(ofstr);
 			if (file2.is_open()) {
 				file2 << save7;
@@ -7830,7 +7844,7 @@ void cycle5() {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-					"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+					"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 					"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 					"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 					"|===================================================================|\033[0m";
@@ -8961,7 +8975,7 @@ void dacha() {
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 						"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-						"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+						"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 						"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 						"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 						"|===================================================================|\033[0m";
@@ -9806,7 +9820,7 @@ void liroom() {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-					"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+					"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 					"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 					"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 					"|===================================================================|\033[0m";
@@ -10339,7 +10353,7 @@ void cot_workshop() {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
-					"|\033[32m             Yes\033[0m: 1                \033[31mNo \033[33m(+1 подсказка)\033[0m: 2\033[36m            |\n"
+					"|\033[32m             Yes\033[0m: 1                   \033[31mNo \033[33m(+1 hint)\033[0m: 2\033[36m              |\n"
 					"|\033[33m-------------------------------------------------------------------\033[36m|\n"
 					"|\033[0m   \033[32mExit to menu\033[0m: 3                \033[31mExit to menu without saving\033[0m: 4   \033[36m|\n"
 					"|===================================================================|\033[0m";
@@ -12102,6 +12116,7 @@ void endgame() {
 		system("pause >NUL");
 		system("cls");
 	}
+	create_folder();
 	string ofstr = folder + "qsave.ini";
 	ofstream achievements(ofstr);
 	if (achievements.is_open()) {
@@ -12294,92 +12309,12 @@ void endgame() {
 
 //меню и прочее
 // 
-//выбор локации
-void levels() {
-	free_mode_playing = true;
-	if (first_free_mode_warning) {
-		system("cls");
-		first_free_mode_warning = false;
-		hide_mouse_cursor();
-		if (Language)
-			cout << "\033[36m|=============================== \033[31mWarning \033[36m===============================|\n"
-			"|\033[0m    Achievements cannot be obtained in the location selection mode!    \033[36m|\n"
-			"|=======================================================================|\033[0m\n";
-		else
-			cout << "\033[36m|======================== \033[31mПредупреждение \033[36m========================|\n"
-			"|\033[0m       Достижения нельзя получить в режиме выбора локации       \033[36m|\n"
-			"|================================================================|\033[0m\n";
-		pause(3500);
-		show_mouse_cursor();
-		system("cls");
-	}
-	while (true) {
-		system("cls");
-		if (Language) {
-			cout << "\033[36m|======== \033[31mLocation selection\033[36m =======|" << endl;
-			cout << "|\033[33mWhat location do you want to go to?\033[36m|\n"		\
-				"|===================================|\n"					\
-				"|\033[0mBasement                          1\033[36m|\n"		\
-				"|\033[0m\033[48;2;50;50;50mYard                              2\033[0m\033[36m|\n"		\
-				"|\033[0mMansion floor first               3\033[36m|\n"		\
-				"|\033[0m\033[48;2;50;50;50mMansion floor second              4\033[0m\033[36m|\n"		\
-				"|\033[0mForest                            5\033[36m|\n"		\
-				"|\033[0m\033[48;2;50;50;50mVillage                           6\033[0m\033[36m|\n"		\
-				"|===================================|\n"					\
-				"|\033[0mBack to menu                    ESC\033[36m|\n"		\
-				"|===================================|\033[0m" << endl;
-		}
-		else {
-			cout << "\033[36m|======== \033[31mВыбор локации\033[36m ========|" << endl;
-			cout << "|\033[33mВ какую локацию хотите попасть?\033[36m|\n"			\
-				"|===============================|\n"				\
-				"|\033[0mПодвал                        1\033[36m|\n"			\
-				"|\033[0m\033[48;2;50;50;50mДвор                          2\033[0m\033[36m|\n"			\
-				"|\033[0mПервый этаж особняка          3\033[36m|\n"			\
-				"|\033[0m\033[48;2;50;50;50mВторой этаж особняка          4\033[0m\033[36m|\n"			\
-				"|\033[0mЛес                           5\033[36m|\n"			\
-				"|\033[0m\033[48;2;50;50;50mДеревня                       6\033[0m\033[36m|\n"			\
-				"|===============================|\n"				\
-				"|\033[0mВернуться в меню            ESC\033[36m|\n"			\
-				"|===============================|\033[0m" << endl;
-		}
-		int lev = _getch();
-		switch (lev) {
-		case 49:
-			cycle1();
-			break;
-		case 50:
-			if (Language)
-				chapter = "|                          \033[33mChapter 2. Yard\033[36m                          |\n";
-			else
-				chapter = "|                           \033[33mГлава 2. Двор\033[36m                           |\n";
-			comp = true, bag_com = true, door_close = false, windows_broke = true, pig_eat = true, figt = false;
-			cycle2();
-			break;
-		case 51:
-			cycle3();
-			break;
-		case 52:
-			cycle4();
-			break;
-		case 53:
-			forest();
-			break;
-		case 54:
-			cycle5();
-			break;
-		case 27:
-			free_mode_playing = false;
-			main_menu();
-			break;
-		}
-	}
-}
 //меню
 void main_menu() {
 	read_qsave();
 	while (true) {
 		system("cls");
+		bool download_installer = false;
 		float shrek = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 		float shrek_probability = static_cast<float>(0.000125);
 		if (shrek <= shrek_probability)
@@ -12451,24 +12386,25 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.1\033[36m ==|\n"		\
-				"|\033[0m        Main menu         \033[36m|\n"	\
-				"|==========================|\n"							\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.2\033[36m ==|\n"		\
+				"|\033[0m        Main menu         \033[36m|\n"			\
+				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mLoad save                2\033[0m\033[36m|\n"			\
 				"|\033[0mAbout the developers     3\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mSettings                 4\033[0m\033[36m|\n"			\
-				"|==========================|\n"							\
+				"|==========================|\n"						\
 				"|\033[0mChanges list             5\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mAchievements             6\033[0m\033[36m|\n"			\
-				"|==========================|\n"							\
+				"|==========================|\n"						\
 				"|\033[0mDelete game data         7\033[36m|\n"			\
 				<< travel_code_text << cheat_panel << open_cheat << \
-				"|==========================|\n"							\
+				"|==========================|\n"						\
 				"|\033[0mBug report           Space\033[36m|\n"			\
+				"|\033[0mDownload installer   Enter\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mQuit game              ESC\033[0m\033[36m|\n"			\
-				"|==========================|\033[0m\n"							\
-				<< f1 << "\n\n\n\n\n\n\n\n\n" << endl;
+				"|==========================|\033[0m\n"					\
+				<< f1 << "\n\n\n\n\n\n\n\n" << endl;
 			if (!travel_com)
 				cout << endl;
 			if (rnd >= 45 && rnd <= 75 && travel_com) {
@@ -12488,8 +12424,12 @@ void main_menu() {
 				cout << "\033[32mTry to enter the code: \"RPG DEMO\"\033[0m";
 			if (rnd >= 15 && rnd <= 40 && travel_com)
 				cout << "\033[32mTry to enter the code: \"STOP CONSOLE\"\033[0m";
+			if (rnd >= 11 && rnd <= 14 || rnd >= 41 && rnd <= 44 || rnd >= 76 && rnd <= 79) {
+				if (developer_mod)
+					cout << "\033[32mDeveloper Mode: ENABLED\033[0m";
+			}
 		}
-		else  {
+		else {
 			if (!travel_com) {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50m\"Код Путешественника\"    8\033[0m\033[36m|";
 				cheat_panel = "\n";
@@ -12506,7 +12446,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mМеню путешественника     8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mЧит панель               +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.1\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.2\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -12521,12 +12461,13 @@ void main_menu() {
 				<< travel_code_text << cheat_panel << open_cheat << \
 				"|==========================|\n"							\
 				"|\033[0mСообщить об ошибке   Space\033[36m|\n"			\
+				"|\033[0mЗагрузить установщик Enter\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mВыйти из игры          ESC\033[0m\033[36m|\n"			\
 				"|==========================|\033[0m\n"							\
-				<< f1 << "\n\n\n\n\n\n\n\n\n" << endl;
+				<< f1 << "\n\n\n\n\n\n\n\n" << endl;
 			if (!travel_com)
 				cout << endl;
-			if (rnd >= 45 && rnd <= 75 && travel_com) {
+			if (rnd >= 45 && rnd <= 55 && travel_com) {
 				int gomer_simpson = rand() % 2;
 				if (gomer_simpson == 0)
 					cout << "\033[32mПопробуй ввести код: \"Snake\"\033[0m";
@@ -12539,10 +12480,14 @@ void main_menu() {
 				else
 					cout << "\033[32mС Днём Рождения, Lonewolf239!\033[0m";
 			}
-			if (rnd >= 80 && travel_com)
+			if (rnd >= 90 && travel_com)
 				cout << "\033[32mПопробуй ввести код: \"RPG DEMO\"\033[0m";
-			if (rnd >= 15 && rnd <= 40 && travel_com)
+			if (rnd >= 15 && rnd <= 25 && travel_com)
 				cout << "\033[32mПопробуй ввести код: \"STOP CONSOLE\"\033[0m";
+			if (rnd >= 11 && rnd <= 14 || rnd >= 26 && rnd <= 44 || rnd >= 56 && rnd <= 89) {
+				if (developer_mod)
+					cout << "\033[32mРежим разработчика: ВКЛЮЧЕНО\033[0m";
+			}
 		}
 		int ge1ch = _getch();
 		switch (ge1ch) {
@@ -12607,6 +12552,7 @@ void main_menu() {
 						cin >> travel_code;
 						hide_cursor();
 						if (travel_code == end_code1) {
+							create_folder();
 							string ofstr = folder + "travel.txt";
 							ofstream travel(ofstr);
 							travel << travel_enable;
@@ -12656,8 +12602,8 @@ void main_menu() {
 			}
 			break;
 		case 43:
-			system("cls");
 			if (travel_com) {
+				system("cls");
 				show_cursor();
 				cout << "\033[36m=======================\033[0m\n"
 					"\033[36m|\033[31m     CHEAT PANEL     \033[36m|\n"
@@ -12668,6 +12614,7 @@ void main_menu() {
 				cout << "\033[0m";
 				if (im_furry_gay == "IM GOD") {
 					nhelp = 666;
+					create_folder();
 					string ofstr = folder + "save.txt";
 					ofstream file(ofstr);
 					if (file.is_open()) {
@@ -12678,6 +12625,7 @@ void main_menu() {
 				}
 				else if (im_furry_gay == cheta) {
 					cheat_get1 = true;
+					create_folder();
 					string ofstr = folder + "key.txt";
 					ofstream cheat(ofstr);
 					cheat << base_cheat;
@@ -12829,7 +12777,7 @@ void main_menu() {
 						ge1ch = _getch();
 					}
 				}
-				else if (im_furry_gay == "I'M FURRY FEMBOY") {
+				else if (im_furry_gay == "IM FURRY FEMBOY") {
 					system("cls");
 					for (int i = 0; i == 0;) {
 						cout << "\r\033[31mME TOO! <3\033[0m" << flush;
@@ -12848,6 +12796,35 @@ void main_menu() {
 							i = _getch();
 					}
 				}
+				else if (im_furry_gay == "IM DEVELOPER") {
+					system("cls");
+					if (!developer_mod) {
+						show_cursor();
+						cout << "Hello \033[36mLonewolf239\033[0m! Enter your password: \033[32m";
+						string dev_pas;
+						getline(cin, dev_pas);
+						hide_cursor();
+						cout << "\033[0m";
+						if (dev_pas == developer_key) {
+							developer_mod = true;
+							if (developer_mod) {
+								string dev_folder = folder + "developer_key.txt";
+								ofstream developer_mod_file(dev_folder);
+								if (developer_mod_file.is_open()) {
+									MessageBoxA(NULL, "Режим разработчика успешно активирован", "Режим разработчика активирован!", MB_ICONINFORMATION | MB_OK);
+									developer_mod_file << dev_pas_file_code;
+									developer_mod_file.close();
+								}
+							}
+						}
+					}
+					else {
+						developer_mod = false;
+						string dev_folder = folder + "developer_key.txt";
+						remove(dev_folder.c_str());
+						MessageBoxA(NULL, "Режим разработчика успешно деактивирован", "Режим разработчика деактивирован!", MB_ICONINFORMATION | MB_OK);
+					}
+				}
 				else {
 					system("cls");
 					cout << "\033[36m|======= \033[31mDoesn' exist \033[36m=======|\n"	\
@@ -12857,6 +12834,9 @@ void main_menu() {
 					ge1ch = _getch();
 				}
 			}
+			break;
+		case 13:
+			download_installer = true;
 			break;
 		case 61:
 			if (cheat_get1) {
@@ -12899,11 +12879,127 @@ void main_menu() {
 			}
 			break;
 		}
+		while (download_installer) {
+			system("cls");
+			if (Language)
+				cout << "\033[36m|=================== \033[31mRestoring Base_Escape\033[36m ===================|\n"
+				"|\033[0m This function is needed in case you have damaged game files \033[36m|\n"
+				"|\033[33m Are you sure you want to download the Base_Escape installer \033[36m|\n"
+				"|_____________________________________________________________|\n"
+				"|\033[0mDownload installer                                      Enter\033[36m|\n"
+				"|\033[0m\033[48;2;50;50;50mCancel                                                    ESC\033[0m\033[36m|\n"
+				"|=============================================================|\033[0m";
+			else
+				cout << "\033[36m|================= \033[31mВосстановление Base_Escape\033[36m ==================|\n"
+				"|\033[0m Эта функция нужна на случай, если у вас повреждены файлы игры \033[36m|\n"
+				"|\033[33m     Вы уверены, что хотите скачать установщик Base_Escape     \033[36m|\n"
+				"|_______________________________________________________________|\n"
+				"|\033[0mЗагрузить установщик                                      Enter\033[36m|\n"
+				"|\033[0m\033[48;2;50;50;50mОтмена                                                      ESC\033[0m\033[36m|\n"
+				"|===============================================================|\033[0m";
+			int choice_u = _getch();
+			switch (choice_u) {
+			case 13:
+				system("cls");
+				cout << "Downloading the Base_Escape installer...\n";
+				cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+				downloaded_file = "Base_escape_setup.exe";
+				download_file(download_url);
+				exit(0);
+				break;
+			case 27:
+				download_installer = false;
+				break;
+			}
+		}
+	}
+}
+//выбор локации
+void levels() {
+	bool in_levels = true;
+	free_mode_playing = true;
+	if (first_free_mode_warning) {
+		system("cls");
+		first_free_mode_warning = false;
+		hide_mouse_cursor();
+		if (Language)
+			cout << "\033[36m|=============================== \033[31mWarning \033[36m===============================|\n"
+			"|\033[0m    Achievements cannot be obtained in the location selection mode!    \033[36m|\n"
+			"|=======================================================================|\033[0m\n";
+		else
+			cout << "\033[36m|======================== \033[31mПредупреждение \033[36m========================|\n"
+			"|\033[0m       Достижения нельзя получить в режиме выбора локации       \033[36m|\n"
+			"|================================================================|\033[0m\n";
+		pause(3500);
+		show_mouse_cursor();
+		system("cls");
+	}
+	while (in_levels) {
+		system("cls");
+		if (Language) {
+			cout << "\033[36m|======== \033[31mLocation selection\033[36m =======|" << endl;
+			cout << "|\033[33mWhat location do you want to go to?\033[36m|\n"		\
+				"|===================================|\n"					\
+				"|\033[0mBasement                          1\033[36m|\n"		\
+				"|\033[0m\033[48;2;50;50;50mYard                              2\033[0m\033[36m|\n"		\
+				"|\033[0mMansion floor first               3\033[36m|\n"		\
+				"|\033[0m\033[48;2;50;50;50mMansion floor second              4\033[0m\033[36m|\n"		\
+				"|\033[0mForest                            5\033[36m|\n"		\
+				"|\033[0m\033[48;2;50;50;50mVillage                           6\033[0m\033[36m|\n"		\
+				"|===================================|\n"					\
+				"|\033[0mBack to menu                    ESC\033[36m|\n"		\
+				"|===================================|\033[0m" << endl;
+		}
+		else {
+			cout << "\033[36m|======== \033[31mВыбор локации\033[36m ========|" << endl;
+			cout << "|\033[33mВ какую локацию хотите попасть?\033[36m|\n"			\
+				"|===============================|\n"				\
+				"|\033[0mПодвал                        1\033[36m|\n"			\
+				"|\033[0m\033[48;2;50;50;50mДвор                          2\033[0m\033[36m|\n"			\
+				"|\033[0mПервый этаж особняка          3\033[36m|\n"			\
+				"|\033[0m\033[48;2;50;50;50mВторой этаж особняка          4\033[0m\033[36m|\n"			\
+				"|\033[0mЛес                           5\033[36m|\n"			\
+				"|\033[0m\033[48;2;50;50;50mДеревня                       6\033[0m\033[36m|\n"			\
+				"|===============================|\n"				\
+				"|\033[0mВернуться в меню            ESC\033[36m|\n"			\
+				"|===============================|\033[0m" << endl;
+		}
+		int lev = _getch();
+		switch (lev) {
+		case 49:
+			cycle1();
+			break;
+		case 50:
+			if (Language)
+				chapter = "|                          \033[33mChapter 2. Yard\033[36m                          |\n";
+			else
+				chapter = "|                           \033[33mГлава 2. Двор\033[36m                           |\n";
+			comp = true, bag_com = true, door_close = false, windows_broke = true, pig_eat = true, figt = false;
+			cycle2();
+			break;
+		case 51:
+			cycle3();
+			break;
+		case 52:
+			cycle4();
+			break;
+		case 53:
+			forest();
+			break;
+		case 54:
+			cycle5();
+			break;
+		case 27:
+			free_mode_playing = false;
+			in_levels = false;
+			break;
+		}
 	}
 }
 //настройки
 void settings() {
-	while (true) {
+	bool in_settings = true;
+	while (in_settings) {
 		if (true) {
 			string save_settings_ini = "[Settings]\n";
 			if (Language)
@@ -12914,6 +13010,7 @@ void settings() {
 				save_settings_ini += "ost=true";
 			else
 				save_settings_ini += "ost=false";
+			create_folder();
 			string ofstr = folder + "config.ini";
 			ofstream config_ini(ofstr);
 			if (config_ini.is_open()) {
@@ -12951,14 +13048,15 @@ void settings() {
 			}
 			break;
 		case 27:
-			main_menu();
+			in_settings = false;
 			break;
 		}
 	}
 }
 //о разработчике
 void developer() {
-	while (true) {
+	bool in_developer = true;
+	while (in_developer) {
 		system("cls");
 		if (Language)
 			cout << "\033[36m|===== \033[31mDevelopers \033[36m=====|\n"	\
@@ -13009,10 +13107,11 @@ void developer() {
 		int dev = _getch();
 		switch (dev) {
 		case 32:
+			in_developer = false;
 			soc_netw();
 			break;
 		case 27:
-			main_menu();
+			in_developer = false;
 			break;
 		case 13:
 			system("explorer https://t.me/Lonewolf239_OrderBOT");
@@ -13051,7 +13150,6 @@ void soc_netw() {
 		"|=======================|\033[0m"
 		<< endl << endl;
 	system("pause >NUL");
-	main_menu();
 }
 //список обновления
 void updet_list() {
@@ -13066,6 +13164,10 @@ void updet_list() {
 		"|\033[33m           Changes in v3.9.4.1           \033[36m|\n"				\
 		"|\033[0m*Redesign of the sub-item: \"Achievements\"\033[36m|\n"			\
 		"|\033[0m*Added explanations to achievements      \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.2           \033[36m|\n"				\
+		"|\033[0m*Code optimization                       \033[36m|\n"				\
+		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
+		"|\033[0m*Stability improvements                  \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPlans for future updates:                \033[36m|\n"				\
 		"|\033[0m*Complete rework: \"Forest\"               \033[36m|\n"			\
@@ -13082,6 +13184,10 @@ void updet_list() {
 		"|\033[33m             Изменения v3.9.4.1             \033[36m|\n"				\
 		"|\033[0m*Редизайн подпункта: \"Достижения\"           \033[36m|\n"				\
 		"|\033[0m*Добавлены пояснения к достижениям          \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.2             \033[36m|\n"				\
+		"|\033[0m*Оптимизация кода                           \033[36m|\n"				\
+		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
+		"|\033[0m*Улучшения стабильности                     \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mПланы на будущие обновления:                \033[36m|\n"				\
 		"|\033[0m*Полная переработка: \"Лес\"                  \033[36m|\n"				\
@@ -13089,11 +13195,11 @@ void updet_list() {
 		"|\033[33mНажмите любую клавишу для продолжения...    \033[36m|\n"				\
 		"|============================================|\033[0m\n";
 	system("pause >NUL");
-	main_menu();
 }
 //достижения
 void achievements() {
-	while (true) {
+	bool in_achievements = true;
+	while (in_achievements) {
 		system("cls");
 		read_qsave();
 		if (firw) {
@@ -13107,7 +13213,7 @@ void achievements() {
 				"|\033[0m Достижения засчитываются только после полного прохождения игры \033[36m|\n"
 				"|================================================================|\033[0m\n";
 			firw = false;
-			pause(2250);
+			pause(2000);
 			show_mouse_cursor();
 			system("cls");
 		}
@@ -13443,7 +13549,7 @@ void achievements() {
 			system("pause >NUL");
 			break;
 		case 27:
-			main_menu();
+			in_achievements = false;
 			break;
 		}
 	}
@@ -13510,14 +13616,15 @@ void delte() {
 			choice = 3;
 			break;
 		case 27:
-			main_menu();
+			cyc = false;
 			break;
 		default:
 			cyc = true;
 		}
 	}
 	system("cls");
-	show_cursor();
+	if (del != 27)
+		show_cursor();
 	if (choice == 0) {
 		if (Language)
 			cout << "Are you sure you want to delete save files? \033[32myes\033[0m\\\033[31mno\033[0m" << endl;
@@ -13689,7 +13796,8 @@ void delte() {
 }
 //код путешественника
 void trave1_code() {
-	while (true) {
+	bool in_travel_menu = true;
+	while (in_travel_menu) {
 		system("cls");
 		if (Language)
 			cout << "\033[36m|======================== \033[31mTraveler Menu \033[36m========================|\n"		\
@@ -13720,10 +13828,10 @@ void trave1_code() {
 		switch (tra) {
 		case 32:
 			system("explorer https://t.me/+VLJzjVRg8ElkZWYy");
-			main_menu();
+			in_travel_menu = false;
 			break;
 		case 27:
-			main_menu();
+			in_travel_menu = false;
 			break;
 		}
 	}
@@ -13744,6 +13852,7 @@ void shrek_dancing() {
 void save(int s) {
 	system("cls");
 	if (s == 1) {
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (file.is_open()) {
@@ -13763,6 +13872,7 @@ void save(int s) {
 		}
 	}
 	if (s == 2) {
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (!isHasTrap) {
@@ -13795,6 +13905,7 @@ void save(int s) {
 		}
 	}
 	if (s == 3) {
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (!isHasTrap) {
@@ -13827,6 +13938,7 @@ void save(int s) {
 		}
 	}
 	if (s == 4) {
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (!isHasTrap) {
@@ -13859,6 +13971,7 @@ void save(int s) {
 		}
 	}
 	if (s == 5) {
+		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
 		if (!isHasTrap) {
@@ -13896,6 +14009,7 @@ void read_qsave() {
 	string ofstr = folder + "qsave.ini";
 	INIReader reader(ofstr);
 	if (reader.ParseError() < 0) {
+		create_folder();
 		ofstream res_achievements(ofstr);
 		if (res_achievements.is_open()) {
 			string res_achiventment = "[Achiventments]\n";
@@ -14089,6 +14203,7 @@ void read_qsave() {
 //temp
 void temp_data(int doing) {
 	if (doing == 0) {
+		create_folder();
 		string ofstr = folder + "temp_data.ini";
 		ofstream temp_qsave_file(ofstr);
 		if (temp_qsave_file.is_open()) {
@@ -14132,6 +14247,7 @@ void temp_data(int doing) {
 		string ofstr_temp = folder + "temp_data.ini";
 		INIReader temp(ofstr_temp);
 		if (temp.ParseError() < 0) {
+			create_folder();
 			ofstream temp_ini(ofstr_temp);
 			if (temp_ini.is_open()) {
 				temp_ini << "[TEMP]\nnum_set=0\nnum_death=0\n"
@@ -14163,6 +14279,16 @@ void temp_data(int doing) {
 			if (code_qsave5 == code_qsave_temp5)
 				Death_Kitchen1 = true;
 		}
+	}
+}
+//создание папки при её отсутствии
+void create_folder() {
+	if (!check()) {
+#ifdef _WIN64
+		CreateDirectoryW(L"C:\\Program Files (x86)\\BaseEscapeData", NULL);
+#else
+		CreateDirectoryW(L"C:\\Program Files\\BaseEscapeData", NULL);
+#endif
 	}
 }
 //скрытие курсора мыши
@@ -14202,7 +14328,6 @@ void setup_setting() {
 	x = GetSystemMetrics(SM_CXSCREEN) / 2 - (r.right - r.left) / 2;
 	y = GetSystemMetrics(SM_CYSCREEN) / 2 - (r.bottom - r.top) / 2;
 	SetWindowPos(consoleWindow, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-	migration = check();
 	hide_cursor();
 	HANDLE consoleHandle = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD consoleMode;
@@ -14210,7 +14335,18 @@ void setup_setting() {
 	SetConsoleMode(consoleHandle, consoleMode & ~(ENABLE_QUICK_EDIT_MODE | ENABLE_EXTENDED_FLAGS | ENABLE_INSERT_MODE));
 	HWND console = GetConsoleWindow();
 	SetWindowLong(console, GWL_STYLE, GetWindowLong(console, GWL_STYLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX & ~WS_MAXIMIZE);
+	srand(static_cast<unsigned int>(time(NULL)));
+	setlocale(LC_CTYPE, "rus");
 	system("cls");
+	string dev_folder = folder + "developer_key.txt";
+	ifstream developer_mod_file(dev_folder);
+	if (developer_mod_file.is_open()) {
+		string code;
+		developer_mod_file >> code;
+		developer_mod_file.close();
+		if (code == dev_pas_file_code)
+			developer_mod = true;
+	}
 }
 
 /*
