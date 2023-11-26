@@ -23,7 +23,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.2", latest_version,
+string current_version = "3.9.4.3", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -37,23 +37,23 @@ bool developer_mod = false;
 
 //коды
 string
-base_cheat = "CODE",		\
-travel_enable = "CODE",		\
-save1 = "CODE",				\
-save2 = "CODE",				\
-save3 = "CODE",				\
-save4 = "CODE",				\
-save5 = "CODE",				\
-save6 = "CODE",				\
-save7 = "CODE",				\
-save8 = "CODE",				\
-save9 = "CODE",				\
-save10 = "CODE",			\
-save11 = "CODE",			\
-save12 = "CODE",			\
-save13 = "CODE",			\
-save14 = "CODE",			\
-save15 = "CODE",			\
+base_cheat = "CODE", \
+travel_enable = "CODE", \
+save1 = "CODE", \
+save2 = "CODE", \
+save3 = "CODE", \
+save4 = "CODE", \
+save5 = "CODE", \
+save6 = "CODE", \
+save7 = "CODE", \
+save8 = "CODE", \
+save9 = "CODE", \
+save10 = "CODE", \
+save11 = "CODE", \
+save12 = "CODE", \
+save13 = "CODE", \
+save14 = "CODE", \
+save15 = "CODE", \
 free_mode = "CODE", \
 string_achievements1 = "CODE", \
 string_achievements2 = "CODE", \
@@ -230,7 +230,7 @@ const char* saul_goodman = {
 const char* loading_string = { "WW   WW  EEEEE  LL       CCCC    OOOO   MM   MM  EEEEE\n"
 			"WW   WW  EE     LL      CC  CC  OO  OO  MMM MMM  EE\n"
 			"WW W WW  EEEE   LL      CC      OO  OO  MM M MM  EEEE\n"
-			"WWWWWWW  EE     LL      CC  CC  OO  OO  MM   NN  EE\n"	
+			"WWWWWWW  EE     LL      CC  CC  OO  OO  MM   NN  EE\n"
 			" WW WW   EEEEE  LLLLLL   CCCC    OOOO   MM   MM  EEEEE\n\n"
 			"IIIIII  NN  NN\n"
 			"  II    NNN NN\n"
@@ -347,12 +347,21 @@ void hide_cursor();
 void show_cursor();
 void setup_setting();
 
-
-
-struct WriteData {
-	ostream* stream;
-	size_t written_bytes;
-};
+//проверка актуальности версии Windows
+typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+bool IsWindows10OrGreater() {
+	HMODULE hMod = GetModuleHandleW(L"ntdll.dll");
+	if (hMod) {
+		RtlGetVersionPtr fnRtlGetVersion = (RtlGetVersionPtr)GetProcAddress(hMod, "RtlGetVersion");
+		if (fnRtlGetVersion != nullptr) {
+			RTL_OSVERSIONINFOW rovi = { 0 };
+			rovi.dwOSVersionInfoSize = sizeof(rovi);
+			if (fnRtlGetVersion(&rovi) == 0)
+				return rovi.dwMajorVersion >= 10;
+		}
+	}
+	return false;
+}
 //проверка нового формата файловой системы
 bool check() {
 	string ofstr = folder + "test.txt";
@@ -479,6 +488,10 @@ bool check_for_updates() {
 	}
 }
 //загрузчик файлов
+struct WriteData {
+	ostream* stream;
+	size_t written_bytes;
+};
 static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata) {
 	WriteData* write_data = (WriteData*)userdata;
 	size_t written_bytes = size * nmemb;
@@ -497,17 +510,40 @@ static int progress_callback(void* clientp, double dltotal, double dlnow, double
 		if (elapsed_time >= 1) {
 			speed = (dlnow - last_written_bytes) / elapsed_time / (1024 * 1024);
 			last_time = current_time;
-			last_written_bytes = dlnow;
+			last_written_bytes = static_cast<size_t>(dlnow);
 		}
 		const int progress_bar_width = 50;
-		int progress_chars = static_cast<int>((download_progress / 100) * progress_bar_width);
-		oss << "\033[32m[";
-		for (int i = 0; i < progress_chars; i++)
-			oss << "=";
-		for (int i = progress_chars; i < progress_bar_width; i++)
-			oss << " ";
-		oss << "] \033[33m";
-		oss << fixed << setprecision(1) << dlnow / (1024 * 1024) << "\033[0m / \033[33m" << fixed << setprecision(1) << dltotal / (1024 * 1024) << "\033[0mMB \033[36m" << fixed << setprecision(2) << speed << "MB/s   \033[0m";
+		stringstream progress_percent;
+		progress_percent << "\033[33m" << fixed << setprecision(1) << download_progress << "%\033[32m";
+		string percent_string = progress_percent.str();
+		int percent_position = (progress_bar_width - percent_string.length()) / 2;
+		string progress_bar(progress_bar_width, ' ');
+		progress_bar.replace(percent_position, percent_string.length(), percent_string);
+		int progress_chars = static_cast<int>((download_progress * progress_bar_width) / 100);
+		for (int i = 0; i < progress_chars; i++) {
+			if (progress_bar[i] == ' ') {
+				int pivo = i + 1;
+				if (pivo < progress_chars) {
+					if (progress_bar[pivo] == ' ') {
+						if (i > 0) {
+							int sok = i - 1;
+							if (sok >= 0) {
+								if (progress_bar[sok] == ' ' || progress_bar[sok] == '=')
+									progress_bar[i] = '=';
+							}
+						}
+						else
+							progress_bar[i] = '=';
+					}
+				}
+				else
+					progress_bar[i] = '=';
+			}
+		}
+		oss << "\033[32m[" << progress_bar << "] ";
+		oss << "\033[33m" << fixed << setprecision(1) << dlnow / (1024 * 1024) << "\033[0m / \033[33m";
+		oss << fixed << setprecision(1) << dltotal / (1024 * 1024) << "\033[0mMB ";
+		oss << "\033[36m" << fixed << setprecision(2) << speed << " MB/s\033[0m                                     ";
 		cout << "\r" << oss.str() << flush;
 	}
 	return 0;
@@ -542,7 +578,6 @@ void download_file(const string& url) {
 		system("cls");
 		cerr << "\033[31mFile download error! Something went wrong...\033[0m\n";
 		system("pause");
-		exit(0);
 	}
 }
 
@@ -551,14 +586,17 @@ void download_file(const string& url) {
 int main() {
 	setup_setting();
 	if (first_start) {
-#ifdef _WIN64
-		folder = "C:\\Program Files (x86)\\BaseEscapeData\\";
-#endif
 		LPCWSTR mutexName = L"Base_Escape_Unique_Mutex";
 		hMutex = CreateMutex(NULL, TRUE, mutexName);
 		if (!developer_mod) {
 			if (GetLastError() == ERROR_ALREADY_EXISTS)
 				return 0;
+		}
+		if (!IsWindows10OrGreater()) {
+			MessageBoxA(NULL, "Операционная система, на которой запущен Base_Escape, не поддерживается. Пожалуйста, обновите вашу версию Windows до 10 или выше.", "Ошибка: Не поддерживаемая версия Windows", MB_ICONERROR | MB_OK);
+			if (hMutex != NULL)
+				CloseHandle(hMutex);
+			return 0;
 		}
 	}
 	int alpha;
@@ -1027,7 +1065,8 @@ int main() {
 			off_on = " OFF ";
 	}
 	main_menu();
-	CloseHandle(hMutex);
+	if (hMutex != NULL)
+		CloseHandle(hMutex);
 	return 0;
 }
 //Старт
@@ -1824,7 +1863,7 @@ void cycle1() {
 					cout << "|===================================================================|\033[0m";
 				}
 			}
-			else  {
+			else {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
 					"|===================================================================|\n"								\
@@ -1866,7 +1905,7 @@ void cycle1() {
 				}
 			}
 		}
-		else  {
+		else {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -1898,7 +1937,7 @@ void cycle1() {
 					cout << "|===================================================================|\033[0m";
 				}
 			}
-			else  {
+			else {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
 					"|===================================================================|\n"								\
@@ -2155,7 +2194,7 @@ void window() {
 					cout << "|===================================================================|\033[0m";
 				}
 			}
-			else  {
+			else {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
 					"|===================================================================|\n"								\
@@ -12277,6 +12316,7 @@ void endgame() {
 	const size_t len = strlen(text) + 1;
 	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
 	if (hMem != 0) {
+		if(hMem!=NULL)
 		if (GlobalLock(hMem) != NULL) {
 			if (memcpy(GlobalLock(hMem), text, len) != NULL)
 				GlobalUnlock(hMem);
@@ -12386,7 +12426,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.2\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.3\033[36m ==|\n"		\
 				"|\033[0m        Main menu         \033[36m|\n"			\
 				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
@@ -12446,7 +12486,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mМеню путешественника     8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mЧит панель               +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.2\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.3\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -13168,6 +13208,8 @@ void updet_list() {
 		"|\033[0m*Code optimization                       \033[36m|\n"				\
 		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
 		"|\033[0m*Stability improvements                  \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.3           \033[36m|\n"				\
+		"|\033[0m*Added Windows up-to-date check          \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPlans for future updates:                \033[36m|\n"				\
 		"|\033[0m*Complete rework: \"Forest\"               \033[36m|\n"			\
@@ -13188,6 +13230,8 @@ void updet_list() {
 		"|\033[0m*Оптимизация кода                           \033[36m|\n"				\
 		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
 		"|\033[0m*Улучшения стабильности                     \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.3             \033[36m|\n"				\
+		"|\033[0m*Добавлена проверка актуальности Windows    \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mПланы на будущие обновления:                \033[36m|\n"				\
 		"|\033[0m*Полная переработка: \"Лес\"                  \033[36m|\n"				\
@@ -14320,6 +14364,9 @@ void show_cursor() {
 }
 //начальная настройка консоли
 void setup_setting() {
+#ifdef _WIN64
+	folder = "C:\\Program Files (x86)\\BaseEscapeData\\";
+#endif
 	SetConsoleTitleA("Base_Escape");
 	GetConsoleTitleA(currentTitle, sizeof(currentTitle));
 	system("mode con cols=130 lines=30");
