@@ -21,7 +21,7 @@ Your objective is to survive and escape from the clutches of the maniac by makin
 - Atmospheric and immersive gameplay
 
 ### System Requirements
-- Operating System: Windows (64-bit or 32-bit)
+- Operating System: Windows 10 or later (64-bit or 32-bit)
 - Storage Space: 150-200MB
 
 ### Updates and Feedback
