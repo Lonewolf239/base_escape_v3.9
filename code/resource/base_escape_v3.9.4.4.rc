@@ -61,8 +61,8 @@ IDI_ICON1               ICON                    "icon1.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,9,4,3
- PRODUCTVERSION 3,9,4,3
+ FILEVERSION 3,9,4,4
+ PRODUCTVERSION 3,9,4,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -79,12 +79,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Lonewolf239"
             VALUE "FileDescription", "Base_Escape"
-            VALUE "FileVersion", "3.9.4.3"
+            VALUE "FileVersion", "3.9.4.4"
             VALUE "InternalName", "Base_Escape"
             VALUE "LegalCopyright", "Lonewolf239 (C) 2022"
             VALUE "OriginalFilename", "Base_Escape"
             VALUE "ProductName", "Base_Escape"
-            VALUE "ProductVersion", "3.9.4.3"
+            VALUE "ProductVersion", "3.9.4.4"
         END
     END
     BLOCK "VarFileInfo"

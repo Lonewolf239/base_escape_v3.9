@@ -23,7 +23,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.3", latest_version,
+string current_version = "3.9.4.4", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -88,9 +88,13 @@ code_qsave_temp5 = "CODE";
 const char* password_for_archive = "CODE";
 
 //HD Lonewolf239
-bool HB_Lonewolf239 = false;
-int td_day, td_mon;
-int bd_day = 4, bd_mon = 8;
+bool HB_Lonewolf239 = false,
+Happy_New_Year = false,
+Happy_Halloween = false;
+int td_day, td_mon, td_year;
+int bd_day = 4, bd_mon = 8,
+ny_day = 31, ny_mon = 12,
+hh_day = 31, hh_mon = 10;
 
 //кол-во достижений
 int const num_achievements = 12;
@@ -593,7 +597,13 @@ int main() {
 				return 0;
 		}
 		if (!IsWindows10OrGreater()) {
-			MessageBoxA(NULL, "Операционная система, на которой запущен Base_Escape, не поддерживается. Пожалуйста, обновите вашу версию Windows до 10 или выше.", "Ошибка: Не поддерживаемая версия Windows", MB_ICONERROR | MB_OK);
+			LCID sysLocale = GetSystemDefaultLCID();
+			char locale[3];
+			GetLocaleInfoA(sysLocale, LOCALE_SISO639LANGNAME, locale, sizeof(locale));
+			if (string(locale) == "ru" || string(locale) == "uk" || string(locale) == "be" || string(locale) == "kk" || string(locale) == "ky")
+				MessageBoxA(NULL, "Операционная система, на которой запущен Base_Escape, не поддерживается. Пожалуйста, обновите вашу версию Windows до 10 или выше.", "Ошибка: Не поддерживаемая версия Windows", MB_ICONERROR | MB_OK);
+			else
+				MessageBoxA(NULL, "The operating system on which Base_Escape is running is not supported. Please upgrade your version of Windows to 10 or higher.", "Error: Unsupported version of Windows", MB_ICONERROR | MB_OK);
 			if (hMutex != NULL)
 				CloseHandle(hMutex);
 			return 0;
@@ -605,8 +615,13 @@ int main() {
 	localtime_s(&local_time, &now);
 	td_day = local_time.tm_mday;
 	td_mon = local_time.tm_mon + 1;
+	td_year = local_time.tm_year;
 	if (td_day == bd_day && td_mon == bd_mon)
 		HB_Lonewolf239 = true;
+	else if (td_day == hh_day && td_mon == hh_mon)
+		Happy_Halloween = true;
+	else if (td_day == ny_day && td_mon == ny_mon)
+		Happy_New_Year = true;
 	if (ndeath != 0)
 		temp_data(0);
 	if (first_start) {
@@ -974,34 +989,17 @@ int main() {
 					}
 					else {
 						if (!test) {
-							if (local_time.tm_year <= 2099) {
+							if (td_year <= 2099) {
 								if (!check_for_updates()) {
 									show_mouse_cursor();
-									int updet_chek;
-									while (true) {
-										system("cls");
-										cout << "\033[36m|======== \033[31mThe version is not up to date \033[36m========|\n"	\
-											"|\033[33m  Your version of Base_Escape is out of date!  \033[36m|\n"				\
-											"|\033[0mPlease update Base_Escape to the latest version\033[36m|\n"				\
-											"|\033[0m Download update: Space            Cancel: ESC \033[36m|\n"
-											"|===============================================|\033[0m";
-										updet_chek = _getch();
-										switch (updet_chek) {
-										case 32:
-											system("cls");
-											cout << "Downloading the new version of Base_Escape...\n"
-												"\033[33mCurrent version: \033[31mv" << current_version << endl <<
-												"\033[33mActual version:  \033[32mv" << latest_version << endl;
-											cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
-											downloaded_file = "Base_escape_setup.exe";
-											download_file(download_url);
-											exit(0);
-											break;
-										case 27:
-											exit(0);
-											break;
-										}
-									}
+									system("cls");
+									cout << "Downloading the new version of Base_Escape...\n"
+										"\033[33mCurrent version: \033[31mv" << current_version << endl <<
+										"\033[33mActual version:  \033[32mv" << latest_version << endl;
+									cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+									downloaded_file = "Base_escape_setup.exe";
+									download_file(download_url);
+									exit(0);
 								}
 							}
 						}
@@ -12441,7 +12439,7 @@ void main_menu() {
 				<< travel_code_text << cheat_panel << open_cheat << \
 				"|==========================|\n"						\
 				"|\033[0mBug report           Space\033[36m|\n"			\
-				"|\033[0mDownload installer   Enter\033[36m|\n"			\
+				"|\033[0mDownload installer       U\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mQuit game              ESC\033[0m\033[36m|\n"			\
 				"|==========================|\033[0m\n"					\
 				<< f1 << "\n\n\n\n\n\n\n\n" << endl;
@@ -12455,10 +12453,14 @@ void main_menu() {
 					cout << "\033[32mTry to enter the code: \"BUG\"\033[0m";
 			}
 			if (rnd <= 10) {
-				if (!HB_Lonewolf239)
+				if (!HB_Lonewolf239 && !Happy_Halloween && !Happy_New_Year)
 					cout << "\033[32mCheat: 6 -> 3 -> 7 -> 5 -> 1\\2\033[0m";
-				else
+				else if (HB_Lonewolf239)
 					cout << "\033[32mHappy Birthday, Lonewolf239!\033[0m";
+				else if (Happy_Halloween)
+					cout << "\033[32mTrick or treat?)\033[0m";
+				else if (Happy_New_Year)
+					cout << "\033[32mHappy New " << td_year + 1 << " Year!\033[0m";
 			}
 			if (rnd >= 80 && travel_com)
 				cout << "\033[32mTry to enter the code: \"RPG DEMO\"\033[0m";
@@ -12501,7 +12503,7 @@ void main_menu() {
 				<< travel_code_text << cheat_panel << open_cheat << \
 				"|==========================|\n"							\
 				"|\033[0mСообщить об ошибке   Space\033[36m|\n"			\
-				"|\033[0mЗагрузить установщик Enter\033[36m|\n"			\
+				"|\033[0mЗагрузить установщик     U\033[36m|\n"			\
 				"|\033[0m\033[48;2;50;50;50mВыйти из игры          ESC\033[0m\033[36m|\n"			\
 				"|==========================|\033[0m\n"							\
 				<< f1 << "\n\n\n\n\n\n\n\n" << endl;
@@ -12515,10 +12517,14 @@ void main_menu() {
 					cout << "\033[32mПопробуй ввести код: \"BUG\"\033[0m";
 			}
 			if (rnd <= 10) {
-				if (!HB_Lonewolf239)
+				if (!HB_Lonewolf239 && !Happy_Halloween && !Happy_New_Year)
 					cout << "\033[32mЧит: 6 -> 3 -> 7 -> 5 -> 1\\2\033[0m";
-				else
+				else if (HB_Lonewolf239)
 					cout << "\033[32mС Днём Рождения, Lonewolf239!\033[0m";
+				else if (Happy_Halloween)
+					cout << "\033[32mСладость или гадость?)\033[0m";
+				else if (Happy_New_Year)
+					cout << "\033[32mС Новым " << td_year + 1 << " Годом!\033[0m";
 			}
 			if (rnd >= 90 && travel_com)
 				cout << "\033[32mПопробуй ввести код: \"RPG DEMO\"\033[0m";
@@ -12865,6 +12871,29 @@ void main_menu() {
 						MessageBoxA(NULL, "Режим разработчика успешно деактивирован", "Режим разработчика деактивирован!", MB_ICONINFORMATION | MB_OK);
 					}
 				}
+				else if (im_furry_gay == "LOVE IS NOT EXTREMISM") {
+					system("cls");
+					cout <<
+						"\033[48;2;255;0;0m                                                  \033[0m\n"
+						"\033[48;2;255;0;0m                                                  \033[0m\n"
+						"\033[48;2;255;0;0m                                                  \033[0m\n"
+						"\033[48;2;255;127;0m                                                  \033[0m\n"
+						"\033[48;2;255;127;0m                                                  \033[0m\n"
+						"\033[48;2;255;127;0m                                                  \033[0m\n"
+						"\033[48;2;255;255;0m                                                  \033[0m\n"
+						"\033[48;2;255;255;0m                                                  \033[0m\n"
+						"\033[48;2;255;255;0m                                                  \033[0m\n"
+						"\033[48;2;0;255;0m                                                  \033[0m\n"
+						"\033[48;2;0;255;0m                                                  \033[0m\n"
+						"\033[48;2;0;255;0m                                                  \033[0m\n"
+						"\033[48;2;0;0;255m                                                  \033[0m\n"
+						"\033[48;2;0;0;255m                                                  \033[0m\n"
+						"\033[48;2;0;0;255m                                                  \033[0m\n"
+						"\033[48;2;148;0;211m                                                  \033[0m\n"
+						"\033[48;2;148;0;211m                                                  \033[0m\n"
+						"\033[48;2;148;0;211m                                                  \033[0m";
+					system("pause >NUL");
+				}
 				else {
 					system("cls");
 					cout << "\033[36m|======= \033[31mDoesn' exist \033[36m=======|\n"	\
@@ -12875,7 +12904,10 @@ void main_menu() {
 				}
 			}
 			break;
-		case 13:
+		case 85:
+		case 117:
+		case 163:
+		case 131:
 			download_installer = true;
 			break;
 		case 61:
@@ -13164,8 +13196,6 @@ void soc_netw() {
 	if (Language)
 		cout << "\033[36m|=== \033[31mSocial network \033[36m===|\n"
 		"|\033[33mLonewolf239:          \033[36m|\n"
-		"|\033[0mDiscord: Bubba#4211   \033[36m|\n"
-		"|\033[0mVK: @1blitz01         \033[36m|\n"
 		"|\033[0mTelegram: @an1onime   \033[36m|\n"
 		"|======================|\n"
 		"|\033[33mqscvhu:               \033[36m|\n"
@@ -13178,8 +13208,6 @@ void soc_netw() {
 	else
 		cout << "\033[36m|====== \033[31mСоц. сети \033[36m======|\n"
 		"|\033[33mLonewolf239:           \033[36m|\n"
-		"|\033[0mDiscord: Bubba#4211    \033[36m|\n"
-		"|\033[0mVK: @1blitz01          \033[36m|\n"
 		"|\033[0mTelegram: @an1onime    \033[36m|\n"
 		"|=======================|\n"
 		"|\033[33mqscvhu:                \033[36m|\n"
@@ -13210,6 +13238,9 @@ void updet_list() {
 		"|\033[0m*Stability improvements                  \033[36m|\n"				\
 		"|\033[33m           Changes in v3.9.4.3           \033[36m|\n"				\
 		"|\033[0m*Added Windows up-to-date check          \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.4           \033[36m|\n"				\
+		"|\033[0m*Added new Easter eggs                   \033[36m|\n"				\
+		"|\033[0m*Minor improvements                      \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPlans for future updates:                \033[36m|\n"				\
 		"|\033[0m*Complete rework: \"Forest\"               \033[36m|\n"			\
@@ -13232,6 +13263,9 @@ void updet_list() {
 		"|\033[0m*Улучшения стабильности                     \033[36m|\n"				\
 		"|\033[33m             Изменения v3.9.4.3             \033[36m|\n"				\
 		"|\033[0m*Добавлена проверка актуальности Windows    \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.4             \033[36m|\n"				\
+		"|\033[0m*Добавлены новые пасхалки                   \033[36m|\n"				\
+		"|\033[0m*Небольшие улучшения                        \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mПланы на будущие обновления:                \033[36m|\n"				\
 		"|\033[0m*Полная переработка: \"Лес\"                  \033[36m|\n"				\
