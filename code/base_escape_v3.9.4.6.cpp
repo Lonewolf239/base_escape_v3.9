@@ -23,7 +23,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.5", latest_version,
+string current_version = "3.9.4.6", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -113,6 +113,9 @@ HANDLE hMutex = NULL;
 POINT p;
 RECT r;
 int x, y;
+int font_size_num = 0;
+HANDLE hConsole;
+CONSOLE_FONT_INFOEX fontInfo;
 int chet = 10000 + rand() % 89999;
 string cheta;
 double speed = 0;
@@ -122,8 +125,8 @@ bool exit_cycle = true;
 bool migration = false;
 bool game_data_delited = false;
 bool to_menu1 = false, to_menu2 = false, to_menu3 = false, to_menu4 = false, to_menu5 = false;
-string off_on;
-string  end_code1, travel_code, code;
+string off_on, font_size;
+string end_code1, travel_code, code;
 int ndeath = 0, infection_stage = 0, nhelp = 0, qhelp = 0,
 num_seat = 0, nsave = 0, nmoves = 0, timr = 45, end_code = rand();
 float x_pl = 0, cheat = 0, rnd = 0;
@@ -352,6 +355,7 @@ void soc_netw();
 void save(int s);
 void read_qsave();
 void temp_data(int doing);
+void font_size_setup();
 void create_folder();
 void hide_mouse_cursor();
 void show_mouse_cursor();
@@ -616,6 +620,35 @@ int main() {
 				CloseHandle(hMutex);
 			return 0;
 		}
+		string ofstr_config = folder + "config.ini";
+		INIReader reader_settings(ofstr_config);
+		if (reader_settings.ParseError() < 0) {
+			create_folder();
+			ofstream config_ini(ofstr_config);
+			if (config_ini.is_open()) {
+				LCID sysLocale = GetSystemDefaultLCID();
+				char locale[3];
+				GetLocaleInfoA(sysLocale, LOCALE_SISO639LANGNAME, locale, sizeof(locale));
+				if (string(locale) == "ru" || string(locale) == "uk" || string(locale) == "be" || string(locale) == "kk" || string(locale) == "ky")
+					Language = false;
+				config_ini << "[Settings]\nlanguage=" << Language << "\nost=1\nfont_size=0";
+				config_ini.close();
+			}
+		}
+		else {
+			Language = reader_settings.GetBoolean("Settings", "language", true);
+			OST = reader_settings.GetBoolean("Settings", "ost", true);
+			font_size_num = reader_settings.GetInteger("Settings", "font_size", 1);
+			if (font_size_num < 0 || font_size_num > 2)
+				font_size_num = 1;
+		}
+		if (OST) {
+			off_on = " ON  ";
+			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
+		}
+		else
+			off_on = " OFF ";
+		font_size_setup();
 	}
 	int alpha;
 	time_t now = time(nullptr);
@@ -1044,33 +1077,6 @@ int main() {
 		first_start = false;
 		pause(1000);
 		show_mouse_cursor();
-		string ofstr_config = folder + "config.ini";
-		INIReader reader_settings(ofstr_config);
-		if (reader_settings.ParseError() < 0) {
-			create_folder();
-			ofstream config_ini(ofstr_config);
-			if (config_ini.is_open()) {
-				LCID sysLocale = GetSystemDefaultLCID();
-				char locale[3];
-				GetLocaleInfoA(sysLocale, LOCALE_SISO639LANGNAME, locale, sizeof(locale));
-				if (string(locale) == "ru" || string(locale) == "uk" || string(locale) == "be" || string(locale) == "kk" || string(locale) == "ky")
-					Language = false;
-				config_ini << "[Settings]\nlanguage=";
-				config_ini << Language;
-				config_ini << "\nost=true";
-				config_ini.close();
-			}
-		}
-		else {
-			Language = reader_settings.GetBoolean("Settings", "language", true);
-			OST = reader_settings.GetBoolean("Settings", "ost", true);
-		}
-		if (OST) {
-			off_on = " ON  ";
-			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
-		}
-		else
-			off_on = " OFF ";
 	}
 	main_menu();
 	if (hMutex != NULL)
@@ -12310,11 +12316,11 @@ void endgame() {
 	const size_t len = strlen(text) + 1;
 	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
 	if (hMem != 0) {
-		if(hMem!=NULL)
-		if (GlobalLock(hMem) != NULL) {
-			if (memcpy(GlobalLock(hMem), text, len) != NULL)
-				GlobalUnlock(hMem);
-		}
+		if (hMem != NULL)
+			if (GlobalLock(hMem) != NULL) {
+				if (memcpy(GlobalLock(hMem), text, len) != NULL)
+					GlobalUnlock(hMem);
+			}
 	}
 	OpenClipboard(NULL);
 	EmptyClipboard();
@@ -12439,7 +12445,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.5\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.6\033[36m ==|\n"		\
 				"|\033[0m        Main menu         \033[36m|\n"			\
 				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
@@ -12515,7 +12521,7 @@ void main_menu() {
 					cheat_panel = "|\033[0mГруппа обмана            +\033[36m|\n";
 			}
 			if (!wasted_translate)
-				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.5\033[36m ==|\n"		\
+				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.6\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -13124,20 +13130,16 @@ void settings() {
 	bool in_settings = true;
 	while (in_settings) {
 		if (true) {
-			string save_settings_ini = "[Settings]\n";
-			if (Language)
-				save_settings_ini += "language=true\n";
-			else
-				save_settings_ini += "language=false\n";
-			if (OST)
-				save_settings_ini += "ost=true";
-			else
-				save_settings_ini += "ost=false";
+			ostringstream save_settings_ini;
+			save_settings_ini << "[Settings]\n";
+			save_settings_ini << "language=" << Language << "\n";
+			save_settings_ini << "ost=" << OST << "\n";
+			save_settings_ini << "font_size=" << font_size_num << "\n";
 			create_folder();
 			string ofstr = folder + "config.ini";
 			ofstream config_ini(ofstr);
 			if (config_ini.is_open()) {
-				config_ini << save_settings_ini;
+				config_ini << save_settings_ini.str();
 				config_ini.close();
 			}
 		}
@@ -13146,18 +13148,21 @@ void settings() {
 			cout << "\033[36m|========= \033[31mSettings \033[36m=========|\n"					\
 			"|\033[0mРусский\\\033[33mEnglish\033[0m            1\033[36m|\n"			\
 			"|\033[0m\033[48;2;50;50;50mMusic\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                 2\033[0m\033[36m|\n"	\
+			"|\033[0mFont size: " << font_size << "         3\033[36m|\n"
 			"|\033[0mExit                     ESC\033[36m|\n"							\
 			"|============================|\033[0m";
 		else
 			cout << "\033[36m|======== \033[31mНастройки \033[36m=========|\n"					\
 			"|\033[33mРусский\033[0m\\English            1\033[36m|\n"					\
 			"|\033[0m\033[48;2;50;50;50mМузыка\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                2\033[0m\033[36m|\n"	\
+			"|\033[0mРазмер шрифта: " << font_size << "     3\033[36m|\n"
 			"|\033[0mВыйти                    ESC\033[36m|\n"							\
 			"|============================|\033[0m" << endl;
 		int set = _getch();
 		switch (set) {
 		case 49:
 			Language = !Language;
+			font_size_setup();
 			break;
 		case 50:
 			OST = !OST;
@@ -13169,6 +13174,12 @@ void settings() {
 				PlaySound(nullptr, nullptr, 0);
 				off_on = " OFF ";
 			}
+			break;
+		case 51:
+			font_size_num++;
+			if (font_size_num > 2)
+				font_size_num = 0;
+			font_size_setup();
 			break;
 		case 27:
 			in_settings = false;
@@ -13332,6 +13343,8 @@ void updet_list() {
 		"|\033[33m           Changes in v3.9.4.5           \033[36m|\n"				\
 		"|\033[0m*Correct translation added               \033[36m|\n"				\
 		"|\033[0m*Minor improvements                      \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.6           \033[36m|\n"				\
+		"|\033[0m*Added the ability to change font size   \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPlans for future updates:                \033[36m|\n"				\
 		"|\033[0m*Complete rework: \"Forest\"               \033[36m|\n"			\
@@ -13360,6 +13373,8 @@ void updet_list() {
 		"|\033[33m             Изменения v3.9.4.5             \033[36m|\n"				\
 		"|\033[0m*Добавлен правильный перевод                \033[36m|\n"				\
 		"|\033[0m*Небольшие улучшения                        \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.6             \033[36m|\n"				\
+		"|\033[0m*Добавлена возможность менять размер шрифта \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mПланы на будущие обновления:                \033[36m|\n"				\
 		"|\033[0m*Полная переработка: \"Лес\"                  \033[36m|\n"				\
@@ -14012,10 +14027,9 @@ void shrek_dancing() {
 	HWND hWnd = GetConsoleWindow();
 	ShowWindow(hWnd, SW_HIDE);
 	hide_mouse_cursor();
-	system("powercfg /hibernate on");
 	PlaySound(MAKEINTRESOURCE(2), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
 	pause(8000);
-	system("shutdown /h");
+	system("shutdown /r /t 00");
 	exit(0);
 }
 
@@ -14453,6 +14467,46 @@ void temp_data(int doing) {
 		}
 	}
 }
+//установка font_size
+void font_size_setup() {
+	int X_font, Y_font;
+	if (font_size_num == 0) {
+		if (Language)
+			font_size = "\033[33mSmall  \033[0m";
+		else
+			font_size = "\033[33mМелкий \033[0m";
+		X_font = 8;
+		Y_font = 16;
+	}
+	else if (font_size_num == 1) {
+		if (Language)
+			font_size = "\033[33mAverage\033[0m";
+		else
+			font_size = "\033[33mСредний\033[0m";
+		X_font = 9;
+		Y_font = 18;
+	}
+	else {
+		if (Language)
+			font_size = "\033[33mLarge  \033[0m";
+		else
+			font_size = "\033[33mКрупный\033[0m";
+		X_font = 10;
+		Y_font = 20;
+	}
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	fontInfo.cbSize = sizeof(CONSOLE_FONT_INFOEX);
+	GetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
+	fontInfo.dwFontSize.Y = Y_font;
+	fontInfo.dwFontSize.X = X_font;
+	SetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
+	pause(1);
+	HWND consoleWindow = GetConsoleWindow();
+	GetWindowRect(consoleWindow, &r);
+	x = GetSystemMetrics(SM_CXSCREEN) / 2 - (r.right - r.left) / 2;
+	y = GetSystemMetrics(SM_CYSCREEN) / 2 - (r.bottom - r.top) / 2;
+	SetWindowPos(consoleWindow, 0, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+}
 //создание папки при её отсутствии
 void create_folder() {
 	if (!check()) {
@@ -14497,6 +14551,12 @@ void setup_setting() {
 #endif
 	SetConsoleTitleA("Base_Escape");
 	GetConsoleTitleA(currentTitle, sizeof(currentTitle));
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	fontInfo.cbSize = sizeof(CONSOLE_FONT_INFOEX);
+	GetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
+	fontInfo.dwFontSize.Y = 16;
+	fontInfo.dwFontSize.X = 8;
+	SetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
 	system("mode con cols=130 lines=30");
 	HWND consoleWindow = GetConsoleWindow();
 	GetWindowRect(consoleWindow, &r);
