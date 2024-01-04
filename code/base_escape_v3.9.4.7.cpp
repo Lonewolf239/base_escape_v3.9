@@ -23,7 +23,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.6", latest_version,
+string current_version = "3.9.4.7", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -113,7 +113,8 @@ HANDLE hMutex = NULL;
 POINT p;
 RECT r;
 int x, y;
-int font_size_num = 0;
+int font_size_num = 0,
+font_type_num = 0;
 HANDLE hConsole;
 CONSOLE_FONT_INFOEX fontInfo;
 int chet = 10000 + rand() % 89999;
@@ -125,7 +126,7 @@ bool exit_cycle = true;
 bool migration = false;
 bool game_data_delited = false;
 bool to_menu1 = false, to_menu2 = false, to_menu3 = false, to_menu4 = false, to_menu5 = false;
-string off_on, font_size;
+string off_on, font_size, font_type;
 string end_code1, travel_code, code;
 int ndeath = 0, infection_stage = 0, nhelp = 0, qhelp = 0,
 num_seat = 0, nsave = 0, nmoves = 0, timr = 45, end_code = rand();
@@ -538,21 +539,15 @@ static int progress_callback(void* clientp, double dltotal, double dlnow, double
 		int progress_chars = static_cast<int>((download_progress * progress_bar_width) / 100);
 		for (int i = 0; i < progress_chars; i++) {
 			if (progress_bar[i] == ' ') {
-				int pivo = i + 1;
-				if (pivo < progress_chars) {
-					if (progress_bar[pivo] == ' ') {
-						if (i > 0) {
-							int sok = i - 1;
-							if (sok >= 0) {
-								if (progress_bar[sok] == ' ' || progress_bar[sok] == '=')
-									progress_bar[i] = '=';
-							}
-						}
-						else
-							progress_bar[i] = '=';
-					}
+				int next_character = i + 1, prev_character = i - 1;
+				if (i == 0)
+					prev_character = 0;
+				bool skip = false;
+				if (i < progress_bar_width / 2) {
+					if (progress_bar[next_character] != ' ')
+						skip = true;
 				}
-				else
+				if (!skip && progress_bar[prev_character] != 'm')
 					progress_bar[i] = '=';
 			}
 		}
@@ -631,16 +626,19 @@ int main() {
 				GetLocaleInfoA(sysLocale, LOCALE_SISO639LANGNAME, locale, sizeof(locale));
 				if (string(locale) == "ru" || string(locale) == "uk" || string(locale) == "be" || string(locale) == "kk" || string(locale) == "ky")
 					Language = false;
-				config_ini << "[Settings]\nlanguage=" << Language << "\nost=1\nfont_size=0";
+				config_ini << "[Settings]\nlanguage=" << Language << "\nost=1\nfont_size=0\nfont_type=0";
 				config_ini.close();
 			}
 		}
 		else {
 			Language = reader_settings.GetBoolean("Settings", "language", true);
 			OST = reader_settings.GetBoolean("Settings", "ost", true);
-			font_size_num = reader_settings.GetInteger("Settings", "font_size", 1);
-			if (font_size_num < 0 || font_size_num > 2)
-				font_size_num = 1;
+			font_size_num = reader_settings.GetInteger("Settings", "font_size", 0);
+			if (font_size_num < 0 || font_size_num > 3)
+				font_size_num = 0;
+			font_type_num = reader_settings.GetInteger("Settings", "font_type", 0);
+			if (font_type_num < 0 || font_type_num > 4)
+				font_size_num = 0;
 		}
 		if (OST) {
 			off_on = " ON  ";
@@ -1039,7 +1037,7 @@ int main() {
 									cout << "Downloading the new version of Base_Escape...\n"
 										"\033[33mCurrent version: \033[31mv" << current_version << endl <<
 										"\033[33mActual version:  \033[32mv" << latest_version << endl;
-									cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+									cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 									downloaded_file = "Base_escape_setup.exe";
 									download_file(download_url);
 									exit(0);
@@ -7803,7 +7801,7 @@ void village(int vil) {
 					cycle5();
 				break;
 			case '2':
-				if (isHasMeat) {
+				if (isHasMeat || dog_die) {
 					nmoves++;
 					cycle5();
 				}
@@ -9339,8 +9337,8 @@ void pavilion() {
 			"|\033[0mЭто была обычная бревенчатая беседка со столом в центре...         \033[36m|\n"					\
 			"|\033[0mНад столом летали мухи, а на самом столе стоял кувшин с водой...   \033[36m|\n"					\
 			"|___________________________________________________________________|\n"									\
-			"|                          \033[33mВзаимодействие:\033[36m                          \033[36m|\n"			\
-			"|\033[0mПопить воды                                                               1\033[36m|\n"					\
+			"|                          \033[33mВзаимодействие:\033[36m                          |\n"			\
+			"|\033[0mПопить воды                                                       1\033[36m|\n"					\
 			"|\033[0m\033[48;2;50;50;50mУйти                                                              2\033[0m\033[36m|\n"				\
 			"|===================================================================|\033[0m";
 		switch (_getch()) {
@@ -11925,235 +11923,237 @@ void endgame() {
 		system("pause >NUL");
 		system("cls");
 	}
-	if (nsave >= 5 && !achievements1 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m                 Coward!                \033[36m|\n"	\
-			"|\033[32m              Save 5 times              \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m                Трусишка!                \033[36m|\n"	\
-			"|\033[32m            Сохраниться 5 раз            \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements1 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (ndeath == 0 && !achievements2 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m       Guided by the right path...      \033[36m|\n"	\
-			"|\033[32m     Complete the game without dying    \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m        Ведомый верными путями...        \033[36m|\n"	\
-			"|\033[32m           Ни разу не умереть            \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements2 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (nsave == 0 && !achievements3 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m          Save is for the weak!         \033[36m|\n"	\
-			"|\033[32m    Complete the game without saving    \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m         Сохранения для слабаков!        \033[36m|\n"	\
-			"|\033[32m          Ни разу не сохраниться         \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements3 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (nmoves > 325 && !achievements4 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m        Look under every stone...       \033[36m|\n"	\
-			"|\033[32mComplete the game in more than 325 moves\033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m      Заглянуть под каждый камень...     \033[36m|\n"	\
-			"|\033[32m   Пройти игру больше чем за 325 ходов   \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements4 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (nmoves < 275 && !achievements5 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m               Speedrunner              \033[36m|\n"	\
-			"|\033[32mComplete the game in less than 275 moves\033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m                Спидранер                \033[36m|\n"	\
-			"|\033[32m   Пройти игру меньше чем за 275 ходов   \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements5 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (somebody && !achievements6 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m        Somebody once told me...        \033[36m|\n"	\
-			"|\033[32m               Meet Shrek               \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m         Самбади ванс толд ми...         \033[36m|\n"	\
-			"|\033[32m             Встретить Шрека             \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements6 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (isHasAmongus && !achievements7 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m                 AMOGUS                 \033[36m|\n"	\
-			"|\033[32m              Find AMOGUS               \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m                 AMOGUS                  \033[36m|\n"	\
-			"|\033[32m              Найти AMOGUSA              \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements7 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (gas_gas_gas && !achievements8 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m               Too stuffy               \033[36m|\n"	\
-			"|\033[32m           Die from poisoning           \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m                 Душнила                 \033[36m|\n"	\
-			"|\033[32m          Умереть от отравления          \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements8 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (sans && !achievements9 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m              I'm not fat.              \033[36m|\n"	\
-			"|\033[0m           I'm just big boned!          \033[36m|\n"	\
-			"|\033[32m  Don't find the skeleton under the bed \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m              Я не толстый.              \033[36m|\n"	\
-			"|\033[0m       У меня просто КОСТЬ широкая!      \033[36m|\n"	\
-			"|\033[32m      Не найти скелета под кроватью      \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements9 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (qhelp >= 24 && !achievements10 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m             Great dumbass              \033[36m|\n"	\
-			"|\033[32m              Use 24 hints              \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m             Великий тупица              \033[36m|\n"	\
-			"|\033[32m        Использовать 24 подсказки        \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements10 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (Death_Kitchen && Death_Kitchen1 && !achievements11 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m         Once bitten, twice shy         \033[36m|\n"	\
-			"|\033[32m           Visit both cuisines          \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m             На те же грабли             \033[36m|\n"	\
-			"|\033[32m         Два раза посетить кухню         \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements11 = true;
-		system("pause >NUL");
-		system("cls");
-	}
-	if (num_seat > 5 && !achievements12 && !free_mode_playing) {
-		if (Language)
-			cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
-			"|\033[0m                 Elder                  \033[36m|\n"	\
-			"|\033[32m    Sit on a bench more than 5 times    \033[36m|\n"	\
-			"|========================================|\n"	\
-			"|\033[33mPress any key to continue...            \033[36m|\n"	\
-			"|========================================|\033[0m";
-		else
-			cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
-			"|\033[0m                Старейшина               \033[36m|\n"	\
-			"|\033[32m    Посидеть на скамейке больше 5 раз    \033[36m|\n"	\
-			"|=========================================|\n"	\
-			"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
-			"|=========================================|\033[0m";
-		achievements12 = true;
-		system("pause >NUL");
-		system("cls");
+	if (!free_mode_playing) {
+		if (nsave >= 5 && !achievements1) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m                 Coward!                \033[36m|\n"	\
+				"|\033[32m              Save 5 times              \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m                Трусишка!                \033[36m|\n"	\
+				"|\033[32m            Сохраниться 5 раз            \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements1 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (ndeath == 0 && !achievements2) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m       Guided by the right path...      \033[36m|\n"	\
+				"|\033[32m     Complete the game without dying    \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m        Ведомый верными путями...        \033[36m|\n"	\
+				"|\033[32m           Ни разу не умереть            \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements2 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (nsave == 0 && !achievements3) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m          Save is for the weak!         \033[36m|\n"	\
+				"|\033[32m    Complete the game without saving    \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m         Сохранения для слабаков!        \033[36m|\n"	\
+				"|\033[32m          Ни разу не сохраниться         \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements3 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (nmoves > 325 && !achievements4) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m        Look under every stone...       \033[36m|\n"	\
+				"|\033[32mComplete the game in more than 325 moves\033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m      Заглянуть под каждый камень...     \033[36m|\n"	\
+				"|\033[32m   Пройти игру больше чем за 325 ходов   \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements4 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (nmoves < 275 && !achievements5) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m               Speedrunner              \033[36m|\n"	\
+				"|\033[32mComplete the game in less than 275 moves\033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m                Спидранер                \033[36m|\n"	\
+				"|\033[32m   Пройти игру меньше чем за 275 ходов   \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements5 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (somebody && !achievements6) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m        Somebody once told me...        \033[36m|\n"	\
+				"|\033[32m               Meet Shrek               \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m         Самбади ванс толд ми...         \033[36m|\n"	\
+				"|\033[32m             Встретить Шрека             \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements6 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (isHasAmongus && !achievements7) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m                 AMOGUS                 \033[36m|\n"	\
+				"|\033[32m              Find AMOGUS               \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m                 AMOGUS                  \033[36m|\n"	\
+				"|\033[32m              Найти AMOGUSA              \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements7 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (gas_gas_gas && !achievements8) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m               Too stuffy               \033[36m|\n"	\
+				"|\033[32m           Die from poisoning           \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m                 Душнила                 \033[36m|\n"	\
+				"|\033[32m          Умереть от отравления          \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements8 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (sans && !achievements9) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m              I'm not fat.              \033[36m|\n"	\
+				"|\033[0m           I'm just big boned!          \033[36m|\n"	\
+				"|\033[32m  Don't find the skeleton under the bed \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m              Я не толстый.              \033[36m|\n"	\
+				"|\033[0m       У меня просто КОСТЬ широкая!      \033[36m|\n"	\
+				"|\033[32m      Не найти скелета под кроватью      \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements9 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (qhelp >= 24 && !achievements10) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m             Great dumbass              \033[36m|\n"	\
+				"|\033[32m              Use 24 hints              \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m             Великий тупица              \033[36m|\n"	\
+				"|\033[32m        Использовать 24 подсказки        \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements10 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (Death_Kitchen && Death_Kitchen1 && !achievements11) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m         Once bitten, twice shy         \033[36m|\n"	\
+				"|\033[32m           Visit both cuisines          \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m             На те же грабли             \033[36m|\n"	\
+				"|\033[32m         Два раза посетить кухню         \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements11 = true;
+			system("pause >NUL");
+			system("cls");
+		}
+		if (num_seat > 5 && !achievements12) {
+			if (Language)
+				cout << "\033[36m|========== \033[31mAchievement earned \033[36m==========|\n"	\
+				"|\033[0m                 Elder                  \033[36m|\n"	\
+				"|\033[32m    Sit on a bench more than 5 times    \033[36m|\n"	\
+				"|========================================|\n"	\
+				"|\033[33mPress any key to continue...            \033[36m|\n"	\
+				"|========================================|\033[0m";
+			else
+				cout << "\033[36m|========== \033[31mПолучено достижение \033[36m==========|\n"	\
+				"|\033[0m                Старейшина               \033[36m|\n"	\
+				"|\033[32m    Посидеть на скамейке больше 5 раз    \033[36m|\n"	\
+				"|=========================================|\n"	\
+				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
+				"|=========================================|\033[0m";
+			achievements12 = true;
+			system("pause >NUL");
+			system("cls");
+		}
 	}
 	create_folder();
 	string ofstr = folder + "qsave.ini";
@@ -12315,12 +12315,11 @@ void endgame() {
 	const char* text = end_code_str.c_str();
 	const size_t len = strlen(text) + 1;
 	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
-	if (hMem != 0) {
-		if (hMem != NULL)
-			if (GlobalLock(hMem) != NULL) {
-				if (memcpy(GlobalLock(hMem), text, len) != NULL)
-					GlobalUnlock(hMem);
-			}
+	if (hMem != NULL) {
+		if (GlobalLock(hMem) != NULL) {
+			if (memcpy(GlobalLock(hMem), text, len) != NULL)
+				GlobalUnlock(hMem);
+		}
 	}
 	OpenClipboard(NULL);
 	EmptyClipboard();
@@ -12331,14 +12330,14 @@ void endgame() {
 		if (Language) {
 			system("cls");
 			cout << "Downloading the first version of Base_Escape... \n";
-			cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+			cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 			downloaded_file = "base_escape_0.1.exe";
 			download_file(download_url_0_1);
 		}
 		else {
 			system("cls");
 			cout << "Downloading the first version of Base_Escape... \n";
-			cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+			cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 			downloaded_file = "base_escape_0.1_rus.exe";
 			download_file(download_url_0_1_rus);
 		}
@@ -12445,7 +12444,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.6\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.7\033[36m ==|\n"		\
 				"|\033[0m        Main menu         \033[36m|\n"			\
 				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
@@ -12521,7 +12520,7 @@ void main_menu() {
 					cheat_panel = "|\033[0mГруппа обмана            +\033[36m|\n";
 			}
 			if (!wasted_translate)
-				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.6\033[36m ==|\n"		\
+				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.7\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -12751,7 +12750,7 @@ void main_menu() {
 						ge1ch = _getch();
 						const size_t len = strlen(password_for_archive) + 1;
 						HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
-						if (hMem != 0) {
+						if (hMem != NULL) {
 							if (GlobalLock(hMem) != NULL) {
 								if (memcpy(GlobalLock(hMem), password_for_archive, len) != NULL)
 									GlobalUnlock(hMem);
@@ -13031,7 +13030,7 @@ void main_menu() {
 			case 13:
 				system("cls");
 				cout << "Downloading the Base_Escape installer...\n";
-				cout << "\033[32m[           \033[33mReceiving the information...           \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+				cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 				downloaded_file = "Base_escape_setup.exe";
 				download_file(download_url);
 				exit(0);
@@ -13135,6 +13134,7 @@ void settings() {
 			save_settings_ini << "language=" << Language << "\n";
 			save_settings_ini << "ost=" << OST << "\n";
 			save_settings_ini << "font_size=" << font_size_num << "\n";
+			save_settings_ini << "font_type=" << font_type_num << "\n";
 			create_folder();
 			string ofstr = folder + "config.ini";
 			ofstream config_ini(ofstr);
@@ -13148,14 +13148,16 @@ void settings() {
 			cout << "\033[36m|========= \033[31mSettings \033[36m=========|\n"					\
 			"|\033[0mРусский\\\033[33mEnglish\033[0m            1\033[36m|\n"			\
 			"|\033[0m\033[48;2;50;50;50mMusic\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                 2\033[0m\033[36m|\n"	\
-			"|\033[0mFont size: " << font_size << "         3\033[36m|\n"
+			"|\033[0mFont size: " << font_size << "         3\033[36m|\n"				\
+			"|\033[0m\033[48;2;50;50;50mFont: " << font_type << "\033[48;2;50;50;50m4\033[0m\033[36m|\n"				\
 			"|\033[0mExit                     ESC\033[36m|\n"							\
 			"|============================|\033[0m";
 		else
 			cout << "\033[36m|======== \033[31mНастройки \033[36m=========|\n"					\
 			"|\033[33mРусский\033[0m\\English            1\033[36m|\n"					\
 			"|\033[0m\033[48;2;50;50;50mМузыка\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                2\033[0m\033[36m|\n"	\
-			"|\033[0mРазмер шрифта: " << font_size << "     3\033[36m|\n"
+			"|\033[0mРазмер шрифта: " << font_size << "     3\033[36m|\n"				\
+			"|\033[0m\033[48;2;50;50;50mШрифт: " << font_type << "\033[48;2;50;50;50m4\033[0m\033[36m|\n"				\
 			"|\033[0mВыйти                    ESC\033[36m|\n"							\
 			"|============================|\033[0m" << endl;
 		int set = _getch();
@@ -13177,8 +13179,14 @@ void settings() {
 			break;
 		case 51:
 			font_size_num++;
-			if (font_size_num > 2)
+			if (font_size_num > 3)
 				font_size_num = 0;
+			font_size_setup();
+			break;
+		case 52:
+			font_type_num++;
+			if (font_type_num > 4)
+				font_type_num = 0;
 			font_size_setup();
 			break;
 		case 27:
@@ -13345,9 +13353,9 @@ void updet_list() {
 		"|\033[0m*Minor improvements                      \033[36m|\n"				\
 		"|\033[33m           Changes in v3.9.4.6           \033[36m|\n"				\
 		"|\033[0m*Added the ability to change font size   \033[36m|\n"				\
-		"|=========================================|\n"								\
-		"|\033[33mPlans for future updates:                \033[36m|\n"				\
-		"|\033[0m*Complete rework: \"Forest\"               \033[36m|\n"			\
+		"|\033[33m           Changes in v3.9.4.7           \033[36m|\n"				\
+		"|\033[0m*Added the ability to change the font    \033[36m|\n"				\
+		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPress any key to continue...             \033[36m|\n"				\
 		"|=========================================|\033[0m\n";
@@ -13375,9 +13383,9 @@ void updet_list() {
 		"|\033[0m*Небольшие улучшения                        \033[36m|\n"				\
 		"|\033[33m             Изменения v3.9.4.6             \033[36m|\n"				\
 		"|\033[0m*Добавлена возможность менять размер шрифта \033[36m|\n"				\
-		"|============================================|\n"								\
-		"|\033[33mПланы на будущие обновления:                \033[36m|\n"				\
-		"|\033[0m*Полная переработка: \"Лес\"                  \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.7             \033[36m|\n"				\
+		"|\033[0m*Добавлена возможность менять шрифт         \033[36m|\n"				\
+		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mНажмите любую клавишу для продолжения...    \033[36m|\n"				\
 		"|============================================|\033[0m\n";
@@ -14388,88 +14396,92 @@ void read_qsave() {
 }
 //temp
 void temp_data(int doing) {
-	if (doing == 0) {
-		create_folder();
-		string ofstr = folder + "temp_data.ini";
-		ofstream temp_qsave_file(ofstr);
-		if (temp_qsave_file.is_open()) {
-			ostringstream convert_seat, convert_death;
-			convert_seat << num_seat;
-			convert_death << ndeath;
-			string temp_qsave = "[TEMP]\n";
-			temp_qsave += "num_set=";
-			temp_qsave += convert_seat.str();
-			temp_qsave += "\nnum_death=";
-			temp_qsave += convert_death.str();
-			if (!somebody)
-				temp_qsave += "\ntemp_qsave0=false";
-			else
-				temp_qsave += "\ntemp_qsave0=" + code_qsave_temp0;
-			if (!isHasAmongus)
-				temp_qsave += "\ntemp_qsave1=false";
-			else
-				temp_qsave += "\ntemp_qsave1=" + code_qsave_temp1;
-			if (!gas_gas_gas)
-				temp_qsave += "\ntemp_qsave2=false";
-			else
-				temp_qsave += "\ntemp_qsave2=" + code_qsave_temp2;
-			if (!sans)
-				temp_qsave += "\ntemp_qsave3=false";
-			else
-				temp_qsave += "\ntemp_qsave3=" + code_qsave_temp3;
-			if (!Death_Kitchen)
-				temp_qsave += "\ntemp_qsave4=false";
-			else
-				temp_qsave += "\ntemp_qsave4=" + code_qsave_temp4;
-			if (!Death_Kitchen1)
-				temp_qsave += "\ntemp_qsave5=false";
-			else
-				temp_qsave += "\ntemp_qsave5=" + code_qsave_temp5;
-			temp_qsave_file << temp_qsave;
-			temp_qsave_file.close();
-		}
-	}
-	else {
-		string ofstr_temp = folder + "temp_data.ini";
-		INIReader temp(ofstr_temp);
-		if (temp.ParseError() < 0) {
+	if (!free_mode_playing) {
+		if (doing == 0) {
 			create_folder();
-			ofstream temp_ini(ofstr_temp);
-			if (temp_ini.is_open()) {
-				temp_ini << "[TEMP]\nnum_set=0\nnum_death=0\n"
-					"temp_qsave0=false\ntemp_qsave1=false\ntemp_qsave2=false\n"
-					"temp_qsave3=false\ntemp_qsave4=false\ntemp_qsave5=false\n";
-				temp_ini.close();
+			string ofstr = folder + "temp_data.ini";
+			ofstream temp_qsave_file(ofstr);
+			if (temp_qsave_file.is_open()) {
+				ostringstream convert_seat, convert_death;
+				convert_seat << num_seat;
+				convert_death << ndeath;
+				string temp_qsave = "[TEMP]\n";
+				temp_qsave += "num_set=";
+				temp_qsave += convert_seat.str();
+				temp_qsave += "\nnum_death=";
+				temp_qsave += convert_death.str();
+				if (!somebody)
+					temp_qsave += "\ntemp_qsave0=false";
+				else
+					temp_qsave += "\ntemp_qsave0=" + code_qsave_temp0;
+				if (!isHasAmongus)
+					temp_qsave += "\ntemp_qsave1=false";
+				else
+					temp_qsave += "\ntemp_qsave1=" + code_qsave_temp1;
+				if (!gas_gas_gas)
+					temp_qsave += "\ntemp_qsave2=false";
+				else
+					temp_qsave += "\ntemp_qsave2=" + code_qsave_temp2;
+				if (!sans)
+					temp_qsave += "\ntemp_qsave3=false";
+				else
+					temp_qsave += "\ntemp_qsave3=" + code_qsave_temp3;
+				if (!Death_Kitchen)
+					temp_qsave += "\ntemp_qsave4=false";
+				else
+					temp_qsave += "\ntemp_qsave4=" + code_qsave_temp4;
+				if (!Death_Kitchen1)
+					temp_qsave += "\ntemp_qsave5=false";
+				else
+					temp_qsave += "\ntemp_qsave5=" + code_qsave_temp5;
+				temp_qsave_file << temp_qsave;
+				temp_qsave_file.close();
 			}
 		}
 		else {
-			ndeath = temp.GetInteger("TEMP", "num_death", 0);
-			num_seat = temp.GetInteger("TEMP", "num_set", 0);
-			string code_qsave0, code_qsave1, code_qsave2, code_qsave3, code_qsave4, code_qsave5;
-			code_qsave0 = temp.GetString("TEMP", "temp_qsave0", "false");
-			code_qsave1 = temp.GetString("TEMP", "temp_qsave1", "false");
-			code_qsave2 = temp.GetString("TEMP", "temp_qsave2", "false");
-			code_qsave3 = temp.GetString("TEMP", "temp_qsave3", "false");
-			code_qsave4 = temp.GetString("TEMP", "temp_qsave4", "false");
-			code_qsave5 = temp.GetString("TEMP", "temp_qsave5", "false");
-			if (code_qsave0 == code_qsave_temp0)
-				somebody = true;
-			if (code_qsave1 == code_qsave_temp2)
-				isHasAmongus = true;
-			if (code_qsave2 == code_qsave_temp2)
-				gas_gas_gas = true;
-			if (code_qsave3 == code_qsave_temp3)
-				sans = true;
-			if (code_qsave4 == code_qsave_temp4)
-				Death_Kitchen = true;
-			if (code_qsave5 == code_qsave_temp5)
-				Death_Kitchen1 = true;
+			string ofstr_temp = folder + "temp_data.ini";
+			INIReader temp(ofstr_temp);
+			if (temp.ParseError() < 0) {
+				create_folder();
+				ofstream temp_ini(ofstr_temp);
+				if (temp_ini.is_open()) {
+					temp_ini << "[TEMP]\nnum_set=0\nnum_death=0\n"
+						"temp_qsave0=false\ntemp_qsave1=false\ntemp_qsave2=false\n"
+						"temp_qsave3=false\ntemp_qsave4=false\ntemp_qsave5=false\n";
+					temp_ini.close();
+				}
+			}
+			else {
+				ndeath = temp.GetInteger("TEMP", "num_death", 0);
+				num_seat = temp.GetInteger("TEMP", "num_set", 0);
+				string code_qsave0, code_qsave1, code_qsave2, code_qsave3, code_qsave4, code_qsave5;
+				code_qsave0 = temp.GetString("TEMP", "temp_qsave0", "false");
+				code_qsave1 = temp.GetString("TEMP", "temp_qsave1", "false");
+				code_qsave2 = temp.GetString("TEMP", "temp_qsave2", "false");
+				code_qsave3 = temp.GetString("TEMP", "temp_qsave3", "false");
+				code_qsave4 = temp.GetString("TEMP", "temp_qsave4", "false");
+				code_qsave5 = temp.GetString("TEMP", "temp_qsave5", "false");
+				if (code_qsave0 == code_qsave_temp0)
+					somebody = true;
+				if (code_qsave1 == code_qsave_temp2)
+					isHasAmongus = true;
+				if (code_qsave2 == code_qsave_temp2)
+					gas_gas_gas = true;
+				if (code_qsave3 == code_qsave_temp3)
+					sans = true;
+				if (code_qsave4 == code_qsave_temp4)
+					Death_Kitchen = true;
+				if (code_qsave5 == code_qsave_temp5)
+					Death_Kitchen1 = true;
+			}
 		}
 	}
 }
 //установка font_size
 void font_size_setup() {
 	int X_font, Y_font;
+	wstring font_name;
+	bool bold = false;
 	if (font_size_num == 0) {
 		if (Language)
 			font_size = "\033[33mSmall  \033[0m";
@@ -14483,22 +14495,72 @@ void font_size_setup() {
 			font_size = "\033[33mAverage\033[0m";
 		else
 			font_size = "\033[33mСредний\033[0m";
-		X_font = 9;
-		Y_font = 18;
+		X_font = 10;
+		Y_font = 20;
+	}
+	else if (font_size_num == 2) {
+		if (Language)
+			font_size = "\033[33mBig    \033[0m";
+		else
+			font_size = "\033[33mБольшой\033[0m";
+		X_font = 12;
+		Y_font = 24;
 	}
 	else {
 		if (Language)
 			font_size = "\033[33mLarge  \033[0m";
 		else
 			font_size = "\033[33mКрупный\033[0m";
-		X_font = 10;
-		Y_font = 20;
+		X_font = 14;
+		Y_font = 28;
+	}
+	if (font_type_num == 0) {
+		if (Language)
+			font_type = "\033[33mConsolas             \033[0m";
+		else
+			font_type = "\033[33mConsolas            \033[0m";
+		font_name = L"Consolas";
+	}
+	else if (font_type_num == 1) {
+		if (Language)
+			font_type = "\033[33mConsolas (Bold)      \033[0m";
+		else
+			font_type = "\033[33mConsolas (Жирный)   \033[0m";
+		font_name = L"Consolas";
+		bold = true;
+	}
+	else if (font_type_num == 2) {
+		if (Language)
+			font_type = "\033[33mCourier New          \033[0m";
+		else
+			font_type = "\033[33mCourier New         \033[0m";
+		font_name = L"Courier New";
+	}
+	else if (font_type_num == 3) {
+		if (Language)
+			font_type = "\033[33mCourier New (Bold)   \033[0m";
+		else
+			font_type = "\033[33mCourier New (Жирный)\033[0m";
+		font_name = L"Courier New";
+		bold = true;
+	}
+	else if (font_type_num == 4) {
+		if (Language)
+			font_type = "\033[33mTerminal             \033[0m";
+		else
+			font_type = "\033[33mTerminal            \033[0m";
+		font_name = L"Terminal";
 	}
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	fontInfo.cbSize = sizeof(CONSOLE_FONT_INFOEX);
 	GetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
+	wcscpy_s(fontInfo.FaceName, font_name.c_str());
 	fontInfo.dwFontSize.Y = Y_font;
 	fontInfo.dwFontSize.X = X_font;
+	if (bold)
+		fontInfo.FontWeight = FW_BOLD;
+	else
+		fontInfo.FontWeight = FW_NORMAL;
 	SetCurrentConsoleFontEx(hConsole, FALSE, &fontInfo);
 	pause(1);
 	HWND consoleWindow = GetConsoleWindow();
