@@ -1,8 +1,10 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by base_escape_v3.9.rc
+// Включаемый файл, созданный в Microsoft Visual C++.
+// Используется base_escape_v3.9.rc
+//
+#define IDC_POINTER                     104
 
-// Следующие стандартные значения для новых объектов
+// Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS

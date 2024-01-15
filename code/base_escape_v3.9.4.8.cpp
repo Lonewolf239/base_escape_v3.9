@@ -18,12 +18,14 @@
 #pragma comment(lib, "user32")
 #define CURL_STATICLIB
 #define pause(x) this_thread::sleep_for(chrono::milliseconds(x))
+#define clear() cout << "\033[2J\033[1;1H"
+#define wait() system("pause >NUL")
 
 
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.7", latest_version,
+string current_version = "3.9.4.8", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -129,7 +131,7 @@ bool to_menu1 = false, to_menu2 = false, to_menu3 = false, to_menu4 = false, to_
 string off_on, font_size, font_type;
 string end_code1, travel_code, code;
 int ndeath = 0, infection_stage = 0, nhelp = 0, qhelp = 0,
-num_seat = 0, nsave = 0, nmoves = 0, timr = 45, end_code = rand();
+num_seat = 0, nsave = 0, nmoves = 0, timr = 45000, end_code = rand();
 float x_pl = 0, cheat = 0, rnd = 0;
 bool Death_Kitchen = false, Death_Kitchen1 = false, achievements1 = false, achievements2 = false, achievements3 = false, achievements4 = false,
 achievements5 = false, achievements6 = false, achievements7 = false, achievements8 = false, achievements9 = false, achievements10 = false,
@@ -266,8 +268,8 @@ const char* loading_string = { "WW   WW  EEEEE  LL       CCCC    OOOO   MM   MM 
 			"VV  VV    333        99999\n"
 			" VVVV   3   33          99\n"
 			"  VV     3333   **   9999\n" };
-string ru_save_question;
-string ru_dead_message;
+string ru_save_question,
+ru_dead_message;
 
 //костыли функций (часть 1)
 void start();
@@ -429,7 +431,7 @@ size_t curl_write_string(void* ptr, size_t size, size_t count, void* stream) {
 	((string*)stream)->append((char*)ptr, 0, size * count);
 	return size * count;
 }
-bool check_for_updates() {
+int check_for_updates() {
 	const char* url = "https://base-escape.ru/version.txt";
 	CURL* curl;
 	CURLcode res;
@@ -446,63 +448,15 @@ bool check_for_updates() {
 		if (res == CURLE_OK) {
 			latest_version = response_string;
 			if (latest_version == current_version)
-				return true;
+				return 1;
 			else
-				return false;
+				return 0;
 		}
-		else {
-			show_mouse_cursor();
-			system("cls");
-			cout << "\033[36m|================== \033[31mError 404 \033[36m==================|\n"
-				<< "|\033[33m      Failed to check for current version      \033[36m|\n"
-				<< "|\033[0m                 Try again: Space              \033[36m|\n"
-				<< "|\033[0m            Press any key to continue...       \033[36m|\n"
-				<< "|===============================================|\033[0m";
-			int check_again = _getch();
-			hide_mouse_cursor();
-			if (check_again == 32) {
-				if (check_for_updates()) {
-					system("cls");
-					cout << loading_string;
-					return true;
-				}
-				else {
-					system("cls");
-					cout << loading_string;
-					return false;
-				}
-			}
-			system("cls");
-			cout << loading_string;
-			return true;
-		}
+		else 
+			return -1;
 	}
-	else {
-		show_mouse_cursor();
-		system("cls");
-		cout << "\033[36m|================== \033[31mError 404 \033[36m==================|\n"
-			<< "|\033[33m      Failed to check for current version      \033[36m|\n"
-			<< "|\033[0m                 Try again: Space              \033[36m|\n"
-			<< "|\033[0m            Press any key to continue...       \033[36m|\n"
-			<< "|===============================================|\033[0m";
-		int check_again = _getch();
-		hide_mouse_cursor();
-		if (check_again == 32) {
-			if (check_for_updates()) {
-				system("cls");
-				cout << loading_string;
-				return true;
-			}
-			else {
-				system("cls");
-				cout << loading_string;
-				return false;
-			}
-		}
-		system("cls");
-		cout << loading_string;
-		return true;
-	}
+	else
+		return -1;
 }
 //загрузчик файлов
 struct WriteData {
@@ -586,7 +540,7 @@ void download_file(const string& url) {
 		system(command.c_str());
 	}
 	else {
-		system("cls");
+		clear();
 		cerr << "\033[31mFile download error! Something went wrong...\033[0m\n";
 		system("pause");
 	}
@@ -634,18 +588,12 @@ int main() {
 			Language = reader_settings.GetBoolean("Settings", "language", true);
 			OST = reader_settings.GetBoolean("Settings", "ost", true);
 			font_size_num = reader_settings.GetInteger("Settings", "font_size", 0);
-			if (font_size_num < 0 || font_size_num > 3)
+			if (font_size_num < 0 || font_size_num > 4)
 				font_size_num = 0;
 			font_type_num = reader_settings.GetInteger("Settings", "font_type", 0);
-			if (font_type_num < 0 || font_type_num > 4)
+			if (font_type_num < 0 || font_type_num > 6)
 				font_size_num = 0;
 		}
-		if (OST) {
-			off_on = " ON  ";
-			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
-		}
-		else
-			off_on = " OFF ";
 		font_size_setup();
 	}
 	int alpha;
@@ -692,7 +640,7 @@ int main() {
 		}
 		if (migration) {
 			hide_mouse_cursor();
-			system("cls");
+			clear();
 			cout << "YOUR FILES ARE OUT OF DATE...\n";
 			for (int i = 0; i < 3 + rand() % 3; i++) {
 				cout << "\rDELETING IN PROGRESS.  " << flush;
@@ -712,7 +660,7 @@ int main() {
 		if (achievements.is_open()) {
 			achievements.close();
 			hide_mouse_cursor();
-			system("cls");
+			clear();
 			cout << "ACHIEVEMENTS FILE IS NOT CURRENT!\n";
 			if (remove(ofstr_achiventments.c_str()) != 0)
 				cout << "\033[31mERROR 404\033[0m" << endl;
@@ -924,7 +872,7 @@ int main() {
 			}
 		}
 		if (test) {
-			system("cls");
+			clear();
 			cout << "\033[36m|==================== \033[31mTEST VERSION \033[36m====================|\n"		\
 				"|\033[0mThis is a test version of Base_Escape                 \033[36m|\n"		\
 				"|\033[0mSo most likely it has bugs...                         \033[36m|\n"		\
@@ -935,105 +883,58 @@ int main() {
 			alpha = _getch();
 			if (alpha == 32) {
 				system("explorer https://t.me/Lonewolf239_BugReportBOT");
-				system("cls");
+				clear();
 				cout << "\033[36m|===================== \033[31mALPHA TEST \033[36m=====================|\n"		\
 					"|\033[0mThank you for choosing to report the bug              \033[36m|\n"		\
 					"|\033[0mI am very grateful to you                             \033[36m|\n"		\
 					"|\033[33mPress any key to continue...                          \033[36m|\n"		\
 					"|======================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 		}
-		system("cls");
+		clear();
 		hide_mouse_cursor();
-		bool now_loading = true;
+		bool now_loading = true, first_delete = true;
 		int loading = 0, rand_loading = 0;
+		string loading_progressbar = "                                                                                                      ";
 		cout << loading_string;
-		cout << "\033[32mLoading 0% [                                                                                                 ]\033[0m" << flush;
+		cout << "\033[32mLoading 0% [" << loading_progressbar << "]\033[0m" << flush;
 		while (now_loading) {
-			string loading_prodress;
 			rand_loading = 1 + rand() % 10;
 			if (!developer_mod) {
 				if (loading >= 5 && loading <= 30) {
 					if (!IsUserAnAdmin()) {
-						int exi1;
-						system("cls");
+						clear();
 						cout << "\033[36m|======= \033[31mNo Administrator \033[36m=======|\n"		\
-							"|\033[0mRun Base_Escape as Administrator\033[36m|\n"				\
-							"|\033[33mPress any key to exit...        \033[36m|\n"				\
+							"|\033[0mRun Base_Escape as Administrator\033[36m|\n"					\
+							"|\033[33mPress any key to exit...        \033[36m|\n"					\
 							"|================================|\033[0m" << endl;
-						exi1 = _getch();
+						wait();
 						exit(0);
 					}
 				}
 				if (loading >= 30 && !dont_did) {
 					if (!IsInternetConnected()) {
-						show_mouse_cursor();
-						for (int i = 0; i != 1;) {
-							int no_inet;
-							system("cls");
-							cout << "\033[36m|============== \033[31mNo internet connection! \033[36m==============|\n"		\
-								"|\033[0mPlease check your network connection and try again...\033[36m|\n"				\
-								"|\033[0m Try again: Space                          Exit: ESC \033[36m|\n"				\
-								"|=====================================================|\033[0m";
-							no_inet = _getch();
-							switch (no_inet) {
-							case 32:
-								system("cls");
-								cout << "Checking for Network...\n";
-								pause(1000);
-								if (IsInternetConnected()) {
-									hide_mouse_cursor();
-									system("cls");
-									cout << "WW   WW  EEEEE  LL       CCCC    OOOO   MM   MM  EEEEE\n"	\
-										"WW   WW  EE     LL      CC  CC  OO  OO  MMM MMM  EE\n"			\
-										"WW W WW  EEEE   LL      CC      OO  OO  MM M MM  EEEE\n"		\
-										"WWWWWWW  EE     LL      CC  CC  OO  OO  MM   NN  EE\n"			\
-										" WW WW   EEEEE  LLLLLL   CCCC    OOOO   MM   MM  EEEEE"		\
-										<< endl << endl << \
-										"IIIIII  NN  NN\n"												\
-										"  II    NNN NN\n"												\
-										"  II    NN NNN\n"												\
-										"  II    NN  NN\n"												\
-										"IIIIII  NN  NN"												\
-										<< endl << endl << \
-										"BBBBB    AAAA    SSSS   EEEEE\n"								\
-										"BB  BB  AA  AA  SS      EE\n"									\
-										"BBBBB   AAAAAA   SSSS   EEEE\n"								\
-										"BB  BB  AA  AA      SS  EE\n"									\
-										"BBBBB   AA  AA   SSSS   EEEEE"									\
-										<< endl << endl << \
-										"EEEEE   SSSS    CCCC    AAAA   PPPPP   EEEEE\n"				\
-										"EE     SS      CC  CC  AA  AA  PP  PP  EE\n"					\
-										"EEEE    SSSS   CC      AAAAAA  PPPPP   EEEE\n"					\
-										"EE         SS  CC  CC  AA  AA  PP      EE\n"					\
-										"EEEEE   SSSS    CCCC   AA  AA  PP      EEEEE"					\
-										<< endl << endl << \
-										"VV  VV   3333        9999\n"									\
-										"VV  VV  3   33      99  99\n"									\
-										"VV  VV    333        99999\n"									\
-										" VVVV   3   33          99\n"									\
-										"  VV     3333   **   9999"										\
-										<< endl;
-									i++;
-								}
-								else {
-									cout << "\033[31mNo internet connection!\033[0m";
-									pause(1000);
-								}
+						int conection_attemps = 0;
+						clear();
+						cout << loading_string;
+						cout << "\r\033[31mNo internet connection! Trying to connect again...\033[0m" << flush;
+						while (true) {
+							pause(2500);
+							if (IsInternetConnected())
 								break;
-							case 27:
-								exit(0);
-								break;
+							else {
+								cout << "\r\033[31mConnection failed... Try again in 2.5 second... number of connection attempts: " << conection_attemps << "              \033[0m" << flush;
+								conection_attemps++;
 							}
 						}
 					}
 					else {
 						if (!test) {
 							if (td_year <= 2099) {
-								if (!check_for_updates()) {
+								if (check_for_updates() == 0) {
 									show_mouse_cursor();
-									system("cls");
+									clear();
 									cout << "Downloading the new version of Base_Escape...\n"
 										"\033[33mCurrent version: \033[31mv" << current_version << endl <<
 										"\033[33mActual version:  \033[32mv" << latest_version << endl;
@@ -1042,39 +943,69 @@ int main() {
 									download_file(download_url);
 									exit(0);
 								}
+								else if (check_for_updates() == -1) {
+									int conection_attemps = 0;
+									clear();
+									cout << loading_string;
+									cout << "\033[31mTrying again to check if the version is up to date...\033[0m";
+									while (true) {
+										pause(2500);
+										if (check_for_updates() == 1)
+											break;
+										else if (check_for_updates() == 0) {
+											show_mouse_cursor();
+											clear();
+											cout << "Downloading the new version of Base_Escape...\n"
+												"\033[33mCurrent version: \033[31mv" << current_version << endl <<
+												"\033[33mActual version:  \033[32mv" << latest_version << endl;
+											cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
+											downloaded_file = "Base_escape_setup.exe";
+											download_file(download_url);
+											exit(0);
+										}
+										else {
+											cout << "\r\033[31mError re-checking whether the version is up to date... next attempt in 2.5 seconds... number of verification attempts: " << conection_attemps << "         \033[0m" << flush;
+											conection_attemps++;
+										}
+									}
+								}
 							}
 						}
 						dont_did = true;
 					}
 				}
 			}
-			pause(rand() % 300);
+			pause(rand() % 275);
 			loading += rand_loading;
-			rand_loading = 1 + rand() % 10;
+			rand_loading = 1 + rand() % 12;
+			if (loading > 9 && first_delete) {
+				first_delete = false;
+				loading_progressbar.pop_back();
+			}
 			if (loading >= 100) {
 				loading = 100;
 				now_loading = false;
+				loading_progressbar.pop_back();
 			}
-			cout << "\r\033[32mLoading " << loading << "% [\033[0m";
-			for (int i = 0; i < 100; i++) {
+			for (int i = 0; i < loading_progressbar.length(); i++) {
 				if (i <= loading) {
-					if (i == 99 && loading == 100)
-						break;
+					if (i == loading && loading != 100)
+						loading_progressbar[i] = '>';
 					else
-						loading_prodress += "=";
-					if (i == loading) {
-						if (loading < 10)
-							loading_prodress += "=";
-					}
+						loading_progressbar[i] = '=';
 				}
-				else
-					loading_prodress += " ";
 			}
-			cout << "\r\033[32mLoading " << loading << "% [" << loading_prodress << "]\033[0m" << flush;
+			cout << "\r\033[32mLoading " << loading << "% [" << loading_progressbar << "]\033[0m" << flush;
 		}
 		first_start = false;
 		pause(1000);
 		show_mouse_cursor();
+		if (OST) {
+			off_on = " ON  ";
+			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
+		}
+		else
+			off_on = " OFF ";
 	}
 	main_menu();
 	if (hMutex != NULL)
@@ -1092,8 +1023,8 @@ void start() {
 #endif
 		game_data_delited = false;
 	}
-	system("cls");
-	code1 = "?", code2 = "?", code3 = "?", code4 = "?", timr = 45, x_pl = 0, infection_stage = 0, num_seat = 0, cab_close = true, firw = true, shed_open = false, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
+	clear();
+	code1 = "?", code2 = "?", code3 = "?", code4 = "?", timr = 45000, x_pl = 0, infection_stage = 0, num_seat = 0, cab_close = true, firw = true, shed_open = false, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
 	shed_code1 = rand() % 10;
 	shed_code2 = rand() % 10;
 	shed_code3 = rand() % 10;
@@ -1138,19 +1069,19 @@ void start() {
 			"|\033[33m      Press any key...     \033[36m|\n"	\
 			"|===========================|\033[0m\n";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|=========================================================|\n"			\
 			"|\033[0mYou woke up in an unknown place. Looks like a basement...\033[36m|\n"	\
 			"|\033[33mPress any key to continue...\033[36m                             |\n"	\
 			"|=========================================================|\n";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "|=============================================================|\n"					\
 			"|\033[0mLooking around, you realized that you did not see anything :(\033[36m|\n"	\
 			"|\033[33mPress any ley to continue...                                 \033[36m|\n"	\
 			"|=============================================================|";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                        \033[33mChapter 1. Basement\033[36m                        |\n"				\
 			"|===================================================================|\n"								\
@@ -1193,19 +1124,19 @@ void start() {
 			"|\033[33m  Нажмите любую клавишу... \033[36m|\n"		\
 			"|===========================|\033[0m\n";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|=========================================================|\n"			\
 			"|\033[0mВы проснулись в неизвестном месте. Напоминает подвал...  \033[36m|\n"	\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                 |\n"	\
 			"|=========================================================|\n";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "|=========================================================|\n"					\
 			"|\033[0mОсмотревшись, вы поняли, что ничего не видите :(         \033[36m|\n"	\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                 |\n"	\
 			"|=========================================================|";
 		next = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                          \033[33mГлава 1. Подвал\033[36m                          |\n"				\
 			"|===================================================================|\n"								\
@@ -1254,7 +1185,7 @@ void start() {
 	case 'x':
 		if (nhelp > 0) {
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"		\
 				"|\033[0mFind a knife in the closet       \033[36m|\n"				\
@@ -1288,7 +1219,7 @@ void save() {
 #endif
 		game_data_delited = false;
 	}
-	system("cls");
+	clear();
 	string sae;
 	string ifstr = folder + "save.txt";
 	ifstream file(ifstr);
@@ -1333,7 +1264,7 @@ void save() {
 				"|\033[0m          Открыть: 1                              Уйти: 2          \033[36m|\n";
 			chapter = "|                          \033[33mГлава 1. Подвал\033[36m                          |\n";
 		}
-		code1 = "?", code2 = "?", code3 = "?", code4 = "?", timr = 45, x_pl = 0, infection_stage = 0, cab_close = true, firw = true, shed_open = false, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
+		code1 = "?", code2 = "?", code3 = "?", code4 = "?", timr = 45000, x_pl = 0, infection_stage = 0, cab_close = true, firw = true, shed_open = false, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
 		shed_code1 = rand() % 10;
 		shed_code2 = rand() % 10;
 		shed_code3 = rand() % 10;
@@ -1369,7 +1300,7 @@ void save() {
 			cout << "\rLOADING SAVE..." << flush;
 			pause(200);
 		}
-		system("cls");
+		clear();
 		if (sae == save1) {
 			cout << "SAVE LOADED SUCCESSFULLY";
 			pause(1000);
@@ -1540,11 +1471,11 @@ void save() {
 //подвал
 void location(int loc) {
 	nmoves++;
-	system("cls");
+	clear();
 	if (loc == 1) {
 		if (!windows_broke) {
 			while (true) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -1582,14 +1513,14 @@ void location(int loc) {
 				"|\033[0mВы подошли к разбитому окну и вылезли во двор...                   \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...                           \033[36m|\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			nmoves++;
 			window();
 		}
 	}
 	else if (loc == 2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter << \
@@ -1643,14 +1574,14 @@ void location(int loc) {
 				"|\033[0mВы подошли к двери и вышли во двор...             \033[36m                 |\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			nmoves++;
 			to_yard = true;
 			cycle2();
 		}
 		else {
 			while (true) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -1699,7 +1630,7 @@ void location(int loc) {
 		}
 		else {
 			while (true) {
-				system("cls");
+				clear();
 				if (Language) {
 					if (git)
 						caret = "|\033[0mYou looked at the carpet under your feet...                        \033[36m|\n"		\
@@ -1758,12 +1689,12 @@ void location(int loc) {
 				"|\033[0mПолный мешок гнилой картошки...ничего интересного...               \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...                           \033[36m|\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			cycle1();
 		}
 		if (!isHasPotatoes) {
 			while (true) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -1788,7 +1719,7 @@ void location(int loc) {
 					"|===================================================================|\033[0m\n";
 				switch (_getch()) {
 				case '1':
-					system("cls");
+					clear();
 					nmoves++;
 					if (!isHasKnife) {
 						if (Language)
@@ -1805,7 +1736,7 @@ void location(int loc) {
 							"|\033[0mИ чем ты собрался его резать?                                      \033[36m|\n"					\
 							"|\033[33mНажмите любую клавишу для продолжения...                           \033[36m|\n"					\
 							"|===================================================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						cycle1();
 					}
 					else {
@@ -1851,7 +1782,7 @@ void location(int loc) {
 								"|===================================================================|\033[0m";
 						}
 						isHasPotatoes = true, bag_com = true;
-						system("pause >NUL");
+						wait();
 						cycle1();
 					}
 					break;
@@ -1868,7 +1799,7 @@ void cycle1() {
 	int next;
 	while (true) {
 		nmoves++;
-		system("cls");
+		clear();
 		if (!to_basement) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -2037,7 +1968,7 @@ void cycle1() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (!door_close) {
 					if (Language)
 						cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"
@@ -2175,7 +2106,7 @@ void cycle1() {
 void window() {
 	int next_windows_11;
 	nmoves++;
-	system("cls");
+	clear();
 	if (isHasKey1) {
 		hide_mouse_cursor();
 		PlaySound(MAKEINTRESOURCE(5), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
@@ -2194,7 +2125,7 @@ void window() {
 			cout << "|\033[33mНажмите любую клавишу для продолжения...\033[36m          |\n"			\
 			"|==================================================|\033[0m";
 		show_mouse_cursor();
-		system("pause >NUL");
+		wait();
 		if (OST)
 			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
 		else
@@ -2370,7 +2301,7 @@ void window() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (!door_close) {
 					if (Language)
 						cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"
@@ -2461,7 +2392,7 @@ void window() {
 	}
 	else if (isHasHammer) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter << \
@@ -2486,7 +2417,7 @@ void window() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				windows_broke = true, isHasHammer = false;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -2541,10 +2472,10 @@ void window() {
 //шкаф
 void close(int cl) {
 	int next_close;
-	system("cls");
+	clear();
 	if (cl == 1) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter <<
@@ -2582,7 +2513,7 @@ void close(int cl) {
 	}
 	if (cl == 2 && comp) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter <<
@@ -2619,7 +2550,7 @@ void close(int cl) {
 	}
 	if (cl == 2 && !isHasKnife) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter <<
@@ -2644,7 +2575,7 @@ void close(int cl) {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				isHasKnife = true, comp = true;
 				if (Language)
@@ -2677,7 +2608,7 @@ void door() {
 	bool did_save = false;
 	bool to_menu = false;
 	int save = 0, next_door;
-	system("cls");
+	clear();
 	if (!isHasKey1 && door_close) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -2715,7 +2646,7 @@ void door() {
 			"|===================================================================|\033[0m";
 		next_door = _getch();
 		while (!did_save) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -2759,7 +2690,7 @@ void door() {
 		}
 	}
 	if (save == 1) {
-		system("cls");
+		clear();
 		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
@@ -2780,7 +2711,7 @@ void door() {
 //ковёр
 void carpter() {
 	int next_carpet;
-	system("cls");
+	clear();
 	if (isHasKnife && !isHasHammer) {
 		nmoves++;
 		isHasHammer = true;
@@ -2847,7 +2778,7 @@ void carpter() {
 //мини-двор
 void ghost_killing(int boo) {
 	nmoves++;
-	system("cls");
+	clear();
 	//колодец
 	if (boo == 1) {
 		if (isHasKey1 || !door_close) {
@@ -2865,7 +2796,7 @@ void ghost_killing(int boo) {
 				"|\033[0mПустой колодец...больше нет ничего интересного... \033[36m                 |\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			cycle1_1();
 		}
 		if (isHasValve) {
@@ -2885,7 +2816,7 @@ void ghost_killing(int boo) {
 			int loading = 0;
 			hide_mouse_cursor();
 			while (now_loading) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 					<< chapter << \
@@ -2912,7 +2843,7 @@ void ghost_killing(int boo) {
 				pause(500);
 				loading++;
 				if (loading >= 10) {
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 						<< chapter << \
@@ -2938,7 +2869,7 @@ void ghost_killing(int boo) {
 				}
 			}
 			show_mouse_cursor();
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter << \
@@ -2958,7 +2889,7 @@ void ghost_killing(int boo) {
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
 			isHasValve = false, isHasKey1 = true;
-			system("pause >NUL");
+			wait();
 			cycle1_1();
 		}
 		if (!isHasValve) {
@@ -2980,7 +2911,7 @@ void ghost_killing(int boo) {
 				"|\033[0mБез вентиля не поднять...                                          \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			cycle1_1();
 		}
 	}
@@ -3026,7 +2957,7 @@ void ghost_killing(int boo) {
 				"|===================================================================|\033[0m";
 			code2 = to_string(shed_code2);
 		}
-		system("pause >NUL");
+		wait();
 		cycle1_1();
 	}
 	//загон
@@ -3048,12 +2979,12 @@ void ghost_killing(int boo) {
 				"|\033[0mНо там больше нет ничего интересного...                            \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			cycle1_1();
 		}
 		else if (isHasPotatoes) {
 			while (true) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -3082,7 +3013,7 @@ void ghost_killing(int boo) {
 					"|===================================================================|\033[0m";
 				switch (_getch()) {
 				case '1':
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 						<< chapter << \
@@ -3107,8 +3038,8 @@ void ghost_killing(int boo) {
 						"|\033[0mИ зашли в небольшое помещение свинарника...                        \033[36m|\n"					\
 						"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 						"|===================================================================|\033[0m";
-					system("pause >NUL");
-					system("cls");
+					wait();
+					clear();
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 						<< chapter << \
@@ -3129,7 +3060,7 @@ void ghost_killing(int boo) {
 						"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 						"|===================================================================|\033[0m";
 					pig_eat = true, isHasValve = true, isHasPotatoes = false;
-					system("pause >NUL");
+					wait();
 					cycle1_1();
 					break;
 				case '2':
@@ -3161,7 +3092,7 @@ void ghost_killing(int boo) {
 				"|\033[0mВидимо надо чем-то её отвлечь...                                   \033[36m|\n"			\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			cycle1_1();
 		}
 	}
@@ -3169,7 +3100,7 @@ void ghost_killing(int boo) {
 	else if (boo == 4) {
 		bool bench_cycle = true;
 		while (bench_cycle) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter << \
@@ -3192,7 +3123,7 @@ void ghost_killing(int boo) {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -3209,7 +3140,7 @@ void ghost_killing(int boo) {
 				hide_mouse_cursor();
 				pause(2000 + rand() % 10000);
 				num_seat++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					<< chapter << \
@@ -3244,7 +3175,7 @@ void cycle1_1() {
 	int next;
 	bool in_cycle = true;
 	while (in_cycle) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				<< chapter << \
@@ -3344,7 +3275,7 @@ void cycle1_1() {
 			in_cycle = true;
 			nmoves++;
 			if (nhelp > 0) {
-				system("cls");
+				clear();
 				if (!door_close) {
 					if (Language)
 						cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"
@@ -3436,7 +3367,7 @@ void cycle1_1() {
 void escape() {
 	int next_escape;
 	nmoves++;
-	system("cls");
+	clear();
 	if (Language) {
 		chapter = "|                          \033[33mChapter 2. Yard\033[36m                          |\n";
 		cout << "\033[36m|===========================|\n"			\
@@ -3444,7 +3375,7 @@ void escape() {
 			"|\033[33m      Press any key...     \033[36m|\n"	\
 			"|===========================|\033[0m\n";
 		next_escape = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                          \033[33mChapter 2. Yard\033[36m                          |\n" \
 			"|===================================================================|\n"								\
@@ -3481,7 +3412,7 @@ void escape() {
 			"|\033[33m  Нажмите любую клавишу... \033[36m|\n"		\
 			"|===========================|\033[0m\n";
 		next_escape = _getch();
-		system("cls");
+		clear();
 		cout << "\033[36m|============================== \033[31mBase_Escape \033[36m==============================|\n"	\
 			"|                              \033[33mГлава 2. Двор\033[36m                              |\n"				\
 			"|=========================================================================|\n"								\
@@ -3530,7 +3461,7 @@ void escape() {
 	case 'x':
 		if (nhelp > 0) {
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"
 				"|\033[0mFind a pry bar in the shed       \033[36m|\n"
@@ -3558,10 +3489,10 @@ void escape() {
 //двор
 void yard(int yr) {
 	nmoves++;
-	system("cls");
+	clear();
 	if (yr == 1) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -3596,7 +3527,7 @@ void yard(int yr) {
 	}
 	else if (yr == 2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (!isHasExplosives) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -3661,7 +3592,7 @@ void yard(int yr) {
 	}
 	else if (yr == 3) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -3696,7 +3627,7 @@ void yard(int yr) {
 	}
 	else if (yr == 4) {
 		while (true) {
-			system("cls");
+			clear();
 			if (!shed_open) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -3757,7 +3688,7 @@ void yard(int yr) {
 			case '1':
 				nmoves++;
 				if (!shed_open) {
-					system("cls");
+					clear();
 					int next_shed;
 					show_cursor();
 					if (Language)
@@ -3772,7 +3703,7 @@ void yard(int yr) {
 						"\033[0mВведите код от замка: \033[32m";
 					cin >> code;
 					hide_cursor();
-					system("cls");
+					clear();
 					final_code = "";
 					final_code += to_string(shed_code1);
 					final_code += to_string(shed_code2);
@@ -3837,7 +3768,7 @@ void yard(int yr) {
 void cycle2() {
 	if (isHasExplosives) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor\033[36m                      |\n"				\
@@ -3885,7 +3816,7 @@ void cycle2() {
 			switch (_getch()) {
 			case '1':
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor\033[36m                      |\n"					\
@@ -3900,7 +3831,7 @@ void cycle2() {
 					"|\033[0mНет смысла возвращаться туда...                   \033[36m                 |\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				break;
 			case '2':
 				nmoves++;
@@ -3908,7 +3839,7 @@ void cycle2() {
 				break;
 			case '3':
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor\033[36m                      |\n"					\
@@ -3925,11 +3856,11 @@ void cycle2() {
 					"|\033[0mЯ не хочу туда подниматься...                     \033[36m                 |\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				break;
 			case '4':
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor\033[36m                      |\n"					\
@@ -3944,12 +3875,12 @@ void cycle2() {
 					"|\033[0mЗдесь нет ничего интересного...                   \033[36m                 |\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				break;
 			case 'x':
 				if (nhelp > 0) {
 					nmoves++;
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m|============== \033[31mTip \033[36m==============|\n"
 						"|\033[0mBlow up the mansion gate lock    \033[36m|\n"
@@ -3960,7 +3891,7 @@ void cycle2() {
 						"|\033[0mВзорвите замок врат особняка     \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					continue;
@@ -3971,7 +3902,7 @@ void cycle2() {
 	}
 	else if (!isHasExplosives && !to_yard) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                          \033[33mChapter 2. Yard\033[36m                          |\n" \
@@ -4059,7 +3990,7 @@ void cycle2() {
 			case 'x':
 				if (nhelp > 0) {
 					nmoves++;
-					system("cls");
+					clear();
 					if (isHasCrowbar) {
 						if (Language)
 							cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -4071,7 +4002,7 @@ void cycle2() {
 							"|\033[0mОторвите доски в домике на дереве\033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4087,7 +4018,7 @@ void cycle2() {
 							"|\033[0mОткройте дверь особняка          \033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4103,7 +4034,7 @@ void cycle2() {
 							"|\033[0mНайдите монтировку в сарае       \033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4115,7 +4046,7 @@ void cycle2() {
 	}
 	else if (!isHasExplosives && to_yard) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                          \033[33mChapter 2. Yard\033[36m                          |\n" \
@@ -4204,7 +4135,7 @@ void cycle2() {
 			case 'x':
 				if (nhelp > 0) {
 					nmoves++;
-					system("cls");
+					clear();
 					if (isHasCrowbar) {
 						if (Language)
 							cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -4216,7 +4147,7 @@ void cycle2() {
 							"|\033[0mОторвите доски в домике на дереве\033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4232,7 +4163,7 @@ void cycle2() {
 							"|\033[0mОткройте дверь особняка          \033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4248,7 +4179,7 @@ void cycle2() {
 							"|\033[0mНайдите монтировку в сарае       \033[36m|\n"
 							"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 							"|=================================|\033[0m";
-						system("pause >NUL");
+						wait();
 						qhelp++;
 						nhelp--;
 						cycle2();
@@ -4261,13 +4192,13 @@ void cycle2() {
 }
 //особняк
 void mansion() {
-	system("cls");
+	clear();
 	bool did_save = false;
 	bool to_menu = false, mansion_cycle = true;
 	int save = 0, next = 0, next2 = 0, next_mansion;
 	if (isHasCrowbar) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -4291,7 +4222,7 @@ void mansion() {
 			switch (_getch()) {
 			case '1':
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                          \033[33mChapter 2. Yard\033[36m                          |\n"					\
@@ -4318,7 +4249,7 @@ void mansion() {
 	}
 	if (isHasMaul) {
 		while (mansion_cycle) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -4354,7 +4285,7 @@ void mansion() {
 		}
 	}
 	if (next == 1) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|============================= \033[31mBase_Escape \033[36m=============================|\n"	\
 			"|                            \033[33mChapter 2. Yard\033[36m                            |\n"					\
@@ -4372,10 +4303,10 @@ void mansion() {
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
 		next_mansion = _getch();
-		system("cls");
+		clear();
 		figt = true;
 		while (!did_save) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -4416,7 +4347,7 @@ void mansion() {
 		}
 	}
 	if (save == 1) {
-		system("cls");
+		clear();
 		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
@@ -4434,14 +4365,14 @@ void mansion() {
 		}
 	}
 	if (next2 == 1) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|===========================|\n"			\
 				"|\033[0m  Chapter 3. First floor.  \033[36m|\n"	\
 				"|\033[33m      Press any key...     \033[36m|\n"	\
 				"|===========================|\033[0m\n";
 			next_mansion = _getch();
-			system("cls");
+			clear();
 			isHasCrowbar = false;
 			isHasMaul = false;
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4473,7 +4404,7 @@ void mansion() {
 				"|\033[33m  Нажмите любую клавишу... \033[36m|\n"		\
 				"|===========================|\033[0m\n";
 			next_mansion = _getch();
-			system("cls");
+			clear();
 			isHasCrowbar = false;
 			isHasMaul = false;
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4519,7 +4450,7 @@ void mansion() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
 					"|\033[0mFind the key in the lounge           \033[36m|\n"
@@ -4566,10 +4497,10 @@ void mansion() {
 void gate() {
 	bool did_save = false, to_menu = false;
 	int sav = 0, nex = 0, next_gate;
-	system("cls");
+	clear();
 	if (isHasExplosives) {
 		while (!did_save) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -4608,7 +4539,7 @@ void gate() {
 			}
 		}
 		if (sav == 1) {
-			system("cls");
+			clear();
 			create_folder();
 			string ofstr = folder + "save.txt";
 			ofstream file(ofstr);
@@ -4647,7 +4578,7 @@ void gate() {
 			"|===================================================================|\033[0m";
 		next_gate = _getch();
 		nmoves++;
-		system("cls");
+		clear();
 		hide_mouse_cursor();
 		PlaySound(MAKEINTRESOURCE(2), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
 		cout << endl << endl <<
@@ -4663,7 +4594,7 @@ void gate() {
 			"   KK  KK  IIIIII  DDDDD   DDDDD   IIIIII  NN  NN   GGGG   ))   ))   ))" << endl << endl;
 		pause(15000);
 		show_mouse_cursor();
-		system("cls");
+		clear();
 		if (OST)
 			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
 		else
@@ -4733,7 +4664,7 @@ void gate() {
 //домик на дереве
 void house() {
 	int next_house;
-	system("cls");
+	clear();
 	if (isHasMaul) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4756,7 +4687,7 @@ void house() {
 	}
 	else {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -4785,7 +4716,7 @@ void house() {
 			switch (_getch()) {
 			case '1':
 				if (!isHasCrowbar) {
-					system("cls");
+					clear();
 					nmoves++;
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4805,7 +4736,7 @@ void house() {
 						"|===================================================================|\033[0m";
 				}
 				else {
-					system("cls");
+					clear();
 					nmoves++;
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4842,7 +4773,7 @@ void house() {
 //сарайчик
 void shed() {
 	int next_shed;
-	system("cls");
+	clear();
 	if (isHasCrowbar || isHasMaul) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4863,7 +4794,7 @@ void shed() {
 	}
 	if (!isHasCrowbar) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                          \033[33mChapter 2. Yard\033[36m                          |\n"				\
@@ -4888,7 +4819,7 @@ void shed() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4924,10 +4855,10 @@ void shed() {
 //первый этаж
 void floor1(int floor1) {
 	nmoves++;
-	system("cls");
+	clear();
 	if (floor1 == 1) {
 		while (true) {
-			system("cls");
+			clear();
 			if (!isHasPlanks) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -4992,7 +4923,7 @@ void floor1(int floor1) {
 	}
 	if (floor1 == 2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"				\
@@ -5027,7 +4958,7 @@ void floor1(int floor1) {
 	}
 	if (floor1 == 3) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"				\
@@ -5062,7 +4993,7 @@ void floor1(int floor1) {
 	}
 	if (floor1 == 4) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"				\
@@ -5099,7 +5030,7 @@ void floor1(int floor1) {
 //цикл первого этажа
 void cycle3() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"				\
@@ -5180,7 +5111,7 @@ void cycle3() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (isHasPlanks) {
 					if (Language)
 						cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -5192,7 +5123,7 @@ void cycle3() {
 						"|\033[0mСделайте мост через лестницу     \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle3();
@@ -5208,7 +5139,7 @@ void cycle3() {
 						"|\033[0mОткройте кладовку                \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle3();
@@ -5224,7 +5155,7 @@ void cycle3() {
 						"|\033[0mНайдите ключ в гостиной          \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle3();
@@ -5236,7 +5167,7 @@ void cycle3() {
 }
 //лестница
 void ladder() {
-	system("cls");
+	clear();
 	bool did_save = false, to_menu = false;
 	int save = 0, next = 0, next2 = 0, next_ladder;
 	if (isHasPlanks) {
@@ -5262,7 +5193,7 @@ void ladder() {
 	}
 	if (next == 1) {
 		while (!did_save) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 				"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -5303,7 +5234,7 @@ void ladder() {
 		}
 	}
 	if (save == 1) {
-		system("cls");
+		clear();
 		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
@@ -5321,14 +5252,14 @@ void ladder() {
 		}
 	}
 	if (next2 == 1) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|===========================|\n"		\
 				"|\033[0m  Chapter 4. Second floor  \033[36m|\n"	\
 				"|\033[33m      Press any key...     \033[36m|\n"	\
 				"|===========================|\033[0m\n";
 			next_ladder = _getch();
-			system("cls");
+			clear();
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
 				"|===================================================================|\n"								\
@@ -5358,7 +5289,7 @@ void ladder() {
 				"|\033[33m  Нажмите любую клавишу... \033[36m|\n"		\
 				"|===========================|\033[0m\n";
 			next_ladder = _getch();
-			system("cls");
+			clear();
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                       \033[33mГлава 4. Второй этаж.\033[36m                       |\n"				\
 				"|===================================================================|\n"								\
@@ -5404,7 +5335,7 @@ void ladder() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
 					"|\033[0mFind the key in the break room       \033[36m|\n"
@@ -5451,7 +5382,7 @@ void ladder() {
 }
 //гостинная
 void liver() {
-	system("cls");
+	clear();
 	int next_liver;
 	if (isHasKey2 || isHasPlanks) {
 		if (Language)
@@ -5473,7 +5404,7 @@ void liver() {
 	}
 	else if (!isHasKey2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"				\
@@ -5501,7 +5432,7 @@ void liver() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -5530,7 +5461,7 @@ void liver() {
 				main();
 				break;
 			case '2':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -5561,7 +5492,7 @@ void liver() {
 //кухня
 void kitchen() {
 	nmoves++;
-	system("cls");
+	clear();
 	if (Language) {
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                      \033[33mChapter 3. First floor.\033[36m                      |\n"					\
@@ -5575,8 +5506,8 @@ void kitchen() {
 			"|\033[0mYou immediately feel how delicious this food is                    \033[36m|\n"					\
 			"|\033[33mPress any key to continue...\033[36m                                       |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                             \033[31mDON'T EAT\033[36m                             |\n"					\
 			"|===================================================================|\n"									\
@@ -5599,8 +5530,8 @@ void kitchen() {
 			"|\033[0mСев за стол и попробовав еду, вы поняли насколько она вкусная...   \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|============================ \033[31mBase_Escape \033[36m============================|\n"		\
 			"|                              \033[31mDON'T EAT\033[36m                              |\n"					\
 			"|=====================================================================|\n"									\
@@ -5612,7 +5543,7 @@ void kitchen() {
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                             |\n"					\
 			"|=====================================================================|\033[0m";
 	}
-	system("pause >NUL");
+	wait();
 	Death_Kitchen = true;
 	ndeath++;
 	temp_data(0);
@@ -5622,7 +5553,7 @@ void kitchen() {
 void utroom() {
 	int next_utroom;
 	nmoves++;
-	system("cls");
+	clear();
 	if (isHasPlanks) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -5692,10 +5623,10 @@ void utroom() {
 //второй этаж
 void floor2(int floor2) {
 	nmoves++;
-	system("cls");
+	clear();
 	if (floor2 == 1) {
 		while (true) {
-			system("cls");
+			clear();
 			if (cab_close) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -5752,7 +5683,7 @@ void floor2(int floor2) {
 	}
 	if (floor2 == 2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -5785,7 +5716,7 @@ void floor2(int floor2) {
 	}
 	if (floor2 == 3) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -5818,7 +5749,7 @@ void floor2(int floor2) {
 	}
 	if (floor2 == 4) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -5855,7 +5786,7 @@ void floor2(int floor2) {
 //цикл второго этажа
 void cycle4() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -5944,7 +5875,7 @@ void cycle4() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (isHasFirecracker) {
 					if (Language)
 						cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -5956,7 +5887,7 @@ void cycle4() {
 						"|\033[0mИдите на чердак                  \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle4();
@@ -5972,7 +5903,7 @@ void cycle4() {
 						"|\033[0mПоставьте книги в кабинете       \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle4();
@@ -5988,7 +5919,7 @@ void cycle4() {
 						"|\033[0mИдите в спальню                  \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle4();
@@ -6004,7 +5935,7 @@ void cycle4() {
 						"|\033[0mОткройте кабинет                 \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle4();
@@ -6020,7 +5951,7 @@ void cycle4() {
 						"|\033[0mНайдите ключ в комнате отдыха    \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle4();
@@ -6033,7 +5964,7 @@ void cycle4() {
 //кабинет
 void cabinet() {
 	int next_cabinet;
-	system("cls");
+	clear();
 	if (isHasFirecracker || bedroomOpen) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6055,7 +5986,7 @@ void cabinet() {
 	}
 	if (isHasBooks) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -6082,7 +6013,7 @@ void cabinet() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6108,7 +6039,7 @@ void cabinet() {
 				cycle4();
 				break;
 			case '2':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6202,7 +6133,7 @@ void cabinet() {
 //спальня
 void bedroom() {
 	int next_bedroom;
-	system("cls");
+	clear();
 	if (isHasFirecracker || isHasBooks) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6223,7 +6154,7 @@ void bedroom() {
 	}
 	if (bedroomOpen) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -6250,7 +6181,7 @@ void bedroom() {
 				"|===================================================================|\033[0m\n";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6272,7 +6203,7 @@ void bedroom() {
 				cycle4();
 				break;
 			case '2':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6333,7 +6264,7 @@ void bedroom() {
 //комната отдыха
 void restroom() {
 	int next_restroom;
-	system("cls");
+	clear();
 	if (isHasFirecracker) {
 		hide_mouse_cursor();
 		PlaySound(MAKEINTRESOURCE(3), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
@@ -6400,7 +6331,7 @@ void restroom() {
 	}
 	if (!isHasKey3) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -6428,7 +6359,7 @@ void restroom() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"					\
@@ -6458,11 +6389,11 @@ void restroom() {
 }
 //чердак
 void attic() {
-	system("cls");
+	clear();
 	int next_attic;
 	if (isHasFirecracker) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -6485,7 +6416,7 @@ void attic() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6511,7 +6442,7 @@ void attic() {
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
 				next_attic = _getch();
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"					\
@@ -6540,7 +6471,7 @@ void attic() {
 	}
 	if (!isHasFirecracker) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                      \033[33mChapter 4. Second floor \033[36m                     |\n"				\
@@ -6565,7 +6496,7 @@ void attic() {
 				"|===================================================================|\033[0m";
 			switch (_getch()) {
 			case '1':
-				system("cls");
+				clear();
 				nmoves++;
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -6607,7 +6538,7 @@ void forest() {
 	nmoves++;
 	int next_forest, did, plus;
 	bool did_save = false;
-	system("cls");
+	clear();
 	if (first_run) {
 		if (Language) {
 			cout << "\033[36m|===========================|\n"		\
@@ -6615,7 +6546,7 @@ void forest() {
 				"|\033[33m      Press any key...     \033[36m|\n"	\
 				"|===========================|\033[0m\n";
 			next_forest = _getch();
-			system("cls");
+			clear();
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 				"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
 				"|===================================================================|\n"									\
@@ -6632,7 +6563,7 @@ void forest() {
 				"|\033[33mPress any key to continue...\033[36m                                       |\n"					\
 				"|===================================================================|\033[0m";
 			next_forest = _getch();
-			system("cls");
+			clear();
 		}
 		else {
 			cout << "\033[36m|===========================|\n"			\
@@ -6642,7 +6573,7 @@ void forest() {
 			next_forest = _getch();
 			float propaganda_mod = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 			float propaganda_mod_probability = static_cast<float>(0.15);
-			system("cls");
+			clear();
 			if (propaganda_mod <= propaganda_mod_probability)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                           \033[33mГлава 5. Лес.\033[36m                           |\n"					\
@@ -6676,7 +6607,7 @@ void forest() {
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
 			next_forest = _getch();
-			system("cls");
+			clear();
 		}
 	}
 	while (!escpe && !gameover) {
@@ -6728,13 +6659,13 @@ void forest() {
 			else
 				space2 = "                       ";
 		}
-		system("cls");
+		clear();
 		if (Language)
-			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"				\
+			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"			\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"							\
 			"|===================================================================|\n"											\
 			"|\033[0m                         Escape progress: \033[33m" << x_pl << "%" << space1 << "\033[36m|\n"				\
-			"|\033[0m                          Seconds left: \033[31m" << timr << space2 << "\033[36m|\n"						\
+			"|\033[0m                          Seconds left: \033[31m" << (timr / 1000) << space2 << "\033[36m|\n"				\
 			"|\033[32m                             Run: Space                            \033[36m|\n"							\
 			"|===================================================================|\033[0m";
 		else
@@ -6742,14 +6673,14 @@ void forest() {
 			"|                           \033[33mГлава 5. Лес.\033[36m                           |\n"							\
 			"|===================================================================|\n"											\
 			"|\033[0m                              Отрыв: \033[33m" << x_pl << "%" << space1 << "\033[36m|\n"					\
-			"|\033[0m                          Осталось секунд: \033[31m" << timr << space2 << "\033[36m|\n"							\
+			"|\033[0m                          Осталось секунд: \033[31m" << (timr / 1000) << space2 << "\033[36m|\n"			\
 			"|\033[32m                            Бежать: Пробел                         \033[36m|\n"							\
 			"|===================================================================|\033[0m";
-		pause(1000);
+		pause(1);
 		timr--;
 	}
 	if (gameover) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                             \033[31mGAME OVER\033[36m                             |\n"					\
@@ -6771,11 +6702,11 @@ void forest() {
 			"|\033[31m" << ru_dead_message << "\033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
+		wait();
 		ndeath++;
 		gameover = false;
 		x_pl = 0;
-		timr = 45;
+		timr = 45000;
 		main();
 	}
 	if (escpe) {
@@ -6787,9 +6718,9 @@ void forest() {
 			else
 				cout << "\n\033[36m|\033[33mНажмите любую клавишу для продолжения...                           \033[36m|\n"							\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			while (!did_save) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -6832,7 +6763,7 @@ void forest() {
 			}
 		}
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"				\
@@ -6878,7 +6809,7 @@ void forest() {
 }
 //кусты
 void bushes() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                             \033[31mGAME OVER\033[36m                             |\n"					\
@@ -6900,18 +6831,18 @@ void bushes() {
 		"|\033[31m" << ru_dead_message << "\033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
+	wait();
 	ndeath++;
 	first_run = true;
 	escpe = false;
 	gameover = false;
 	x_pl = 0;
-	timr = 45;
+	timr = 45000;
 	main();
 }
 //бочка
 void barrel() {
-	system("cls");
+	clear();
 	if (Language) {
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -6922,8 +6853,8 @@ void barrel() {
 			"|\033[0mThey were clearly aggressive and were looking for you...           \033[36m|\n"					\
 			"|\033[33mPress any key to continue...\033[36m                                       |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                             \033[31mGAME OVER\033[36m                             |\n"					\
 			"|===================================================================|\n"									\
@@ -6945,8 +6876,8 @@ void barrel() {
 			"|\033[0mОни явно были настроены агрессивно и искали вас...                 \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                             \033[31mGAME OVER\033[36m                             |\n"					\
 			"|===================================================================|\n"									\
@@ -6957,18 +6888,18 @@ void barrel() {
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
 	}
-	system("pause >NUL");
+	wait();
 	ndeath++;
 	first_run = true;
 	escpe = false;
 	gameover = false;
 	x_pl = 0;
-	timr = 45;
+	timr = 45000;
 	main();
 }
 //дерево
 void tree() {
-	system("cls");
+	clear();
 	if (Language) {
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -6980,8 +6911,8 @@ void tree() {
 			"|\033[0mYou saw how detachments with torches and guns were passing below...\033[36m|\n"					\
 			"|\033[33mPress any key to continue...\033[36m                                       |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
 			"|===================================================================|\n"									\
@@ -7006,8 +6937,8 @@ void tree() {
 			"|\033[0mВы лицезрели, как снизу проходят отряды с факелами и ружьями...    \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|                           \033[33mГлава 5. Лес.\033[36m                           |\n"					\
 			"|===================================================================|\n"									\
@@ -7020,18 +6951,18 @@ void tree() {
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
 	}
-	system("pause >NUL");
+	wait();
 	first_run = true;
 	escpe = false;
 	gameover = false;
 	x_pl = 0;
-	timr = 45;
+	timr = 45000;
 	path();
 }
 //тропа
 void path() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -7070,7 +7001,7 @@ void path() {
 //глубины леса
 void deep_forest() {
 	if (look_around) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -7089,13 +7020,13 @@ void deep_forest() {
 			"|\033[0mВы взяли медвежий капкан...                                        \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
+		wait();
 		isHasTrap = true;
 		look_around = false;
 	}
 	while (true) {
 		if (!look_around) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"				\
@@ -7157,7 +7088,7 @@ void deep_forest() {
 			case '2':
 				nmoves++;
 				loop = true;
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -7172,7 +7103,7 @@ void deep_forest() {
 					"|\033[0mВы обошли камень и пошли прямо...                                  \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				deep_forest();
 				break;
 			case '3':
@@ -7188,7 +7119,7 @@ void left() {
 	bool to_menu = false;
 	bool did_save = false;
 	int save = 0;
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -7211,9 +7142,9 @@ void left() {
 		"|\033[0mВы пришли в деревню...                                             \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
+	wait();
 	while (!did_save) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 			"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -7252,7 +7183,7 @@ void left() {
 		}
 	}
 	if (save == 1) {
-		system("cls");
+		clear();
 		create_folder();
 		string ofstr = folder + "save.txt";
 		ofstream file(ofstr);
@@ -7286,7 +7217,7 @@ void left() {
 }
 //направо
 void right() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                         \033[33mChapter 5. Forest.\033[36m                        |\n"					\
@@ -7310,8 +7241,8 @@ void right() {
 		"|\033[0mНе успели вы к ней подойти как дверь резко распахнулась...         \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
-	system("cls");
+	wait();
+	clear();
 	hide_mouse_cursor();
 	PlaySound(MAKEINTRESOURCE(4), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
 	cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -7340,7 +7271,7 @@ void right() {
 		"|\033[46m                                                                   \033[0m\033[36m|\n"									\
 		"|===================================================================|\n";
 	pause(7500);
-	system("cls");
+	clear();
 	if (Language) {
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 			"|\033[33m                      Somebody once told me...                     \033[36m|\n"					\
@@ -7403,7 +7334,7 @@ void right() {
 	int shrek = 0;
 	show_mouse_cursor();
 	while (true) {
-		system("cls");
+		clear();
 		if (shrek == 0) {
 			if (Language)
 				cout << "\033[36m|================== \033[31mBase_Escape \033[36m===================|\n"		\
@@ -7461,14 +7392,14 @@ void right() {
 // 
 //преддеревня
 void prev_village() {
-	system("cls");
+	clear();
 	if (Language) {
 		cout << "\033[36m|===========================|\n"		\
 			"|\033[0m    Chapter 6. Village.    \033[36m|\n"	\
 			"|\033[33m      Press any key...     \033[36m|\n"	\
 			"|===========================|\033[0m\n";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                        \033[33mChapter 6. Village. \033[36m                       |\n"				\
 			"|===================================================================|\n"								\
@@ -7499,8 +7430,8 @@ void prev_village() {
 			"|\033[0m     Глава 6. Деревня      \033[36m|\n"		\
 			"|\033[33m  Нажмите любую клавишу... \033[36m|\n"		\
 			"|===========================|\033[0m\n";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                         \033[33mГлава 6. Деревня.\033[36m                         |\n"				\
 			"|===================================================================|\n"								\
@@ -7550,7 +7481,7 @@ void prev_village() {
 	case 'x':
 		if (nhelp > 0) {
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
 				"|\033[0mFind the key in a small hut          \033[36m|\n"
@@ -7561,7 +7492,7 @@ void prev_village() {
 				"|\033[0mНайдите ключ в небольшой хижине  \033[36m|\n"
 				"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 				"|=================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			qhelp++;
 			nhelp--;
 		}
@@ -7573,7 +7504,7 @@ void prev_village() {
 }
 //деревня
 void village(int vil) {
-	system("cls");
+	clear();
 	if (first) {
 		if (Language) {
 			house1_1 = "Dwelling house                                                    2",
@@ -7591,7 +7522,7 @@ void village(int vil) {
 	}
 	if (vil == 1) {
 		while (true) {
-			system("cls");
+			clear();
 			if (!meat_open) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -7658,7 +7589,7 @@ void village(int vil) {
 	}
 	if (vil == 2) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                        \033[33mChapter 6. Village. \033[36m                       |\n"				\
@@ -7705,7 +7636,7 @@ void village(int vil) {
 	}
 	if (vil == 3) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				if (dog_die)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -7811,7 +7742,7 @@ void village(int vil) {
 	}
 	if (vil == 4) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                        \033[33mChapter 6. Village. \033[36m                       |\n"				\
@@ -7854,7 +7785,7 @@ void village(int vil) {
 	}
 	if (vil == 5) {
 		while (true) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"				\
@@ -7893,11 +7824,11 @@ void village(int vil) {
 //цикл деревни 
 void cycle5() {
 	while (true) {
-		system("cls");
+		clear();
 		if (ryr) {
 			bool did_save = false;
 			while (!did_save) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -7939,7 +7870,7 @@ void cycle5() {
 				}
 			}
 		}
-		system("cls");
+		clear();
 		if (first) {
 			if (Language) {
 				house1_1 = "Dwelling house                                                    2",
@@ -7970,7 +7901,7 @@ void cycle5() {
 			if (!Language && infection_stage > 7 && infection_stage < 10)
 				stage = "На грани смерти                                  \033[36m|\n";
 			if (infection_stage >= 10) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|\033[31m                             GAME OVER                             \033[36m|\n"					\
@@ -7992,7 +7923,7 @@ void cycle5() {
 				gas_gas_gas = true;
 				ndeath++;
 				temp_data(0);
-				system("pause >NUL");
+				wait();
 				main();
 			}
 		}
@@ -8118,7 +8049,7 @@ void cycle5() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (lamp) {
 					if (Language)
 						cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -8130,7 +8061,7 @@ void cycle5() {
 						"|\033[0mНайдите керосин в коттедже       \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8146,7 +8077,7 @@ void cycle5() {
 						"|\033[0mНайдите лампу в коттедже         \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8162,7 +8093,7 @@ void cycle5() {
 						"|\033[0mСпуститесь в катакомбы (Церковь) \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8178,7 +8109,7 @@ void cycle5() {
 						"|\033[0mНайдите лампу и масло в коттедже \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8194,7 +8125,7 @@ void cycle5() {
 						"|\033[0mОткройте дверь в катакомбы       \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8210,7 +8141,7 @@ void cycle5() {
 						"|\033[0mНайдите топор на дачном участке  \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8226,7 +8157,7 @@ void cycle5() {
 						"|\033[0m\"Покормите\" пёселя на даче       \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8242,7 +8173,7 @@ void cycle5() {
 						"|\033[0mОткройте мясную лавку            \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8258,7 +8189,7 @@ void cycle5() {
 						"|\033[0mНайдите ключ в небольшой хижине  \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 					cycle5();
@@ -8270,7 +8201,7 @@ void cycle5() {
 }
 //мясная лавка 
 void meat_shop() {
-	system("cls");
+	clear();
 	if (house1_com) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8286,17 +8217,17 @@ void meat_shop() {
 			"|\033[0mЗдесь больше нет ничего интересного...                             \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
+		wait();
 		cycle5();
 	}
 	if (isHasKey4 || meat_open) {
 		while (true) {
-			system("cls");
+			clear();
 			if (poison) {
 				if (!isHasMask)
 					infection_stage += 2;
 				if (infection_stage >= 10) {
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 						"|\033[31m                             GAME OVER                             \033[36m|\n"					\
@@ -8318,7 +8249,7 @@ void meat_shop() {
 					gas_gas_gas = true;
 					ndeath++;
 					temp_data(0);
-					system("pause >NUL");
+					wait();
 					main();
 				}
 			}
@@ -8392,7 +8323,7 @@ void meat_shop() {
 			switch (_getch()) {
 			case '1':
 				nmoves++;
-				system("cls");
+				clear();
 				if (!isHasMask) {
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8452,7 +8383,7 @@ void meat_shop() {
 						"|===================================================================|\033[0m";
 				}
 				isHasMeat = true, house1_com = true, ryr = true;
-				system("pause >NUL");
+				wait();
 				cycle5();
 				break;
 			case '2':
@@ -8477,7 +8408,7 @@ void meat_shop() {
 			"|\033[0mУ вас нет ключа от этой двери...                                   \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
+		wait();
 		cycle5();
 	}
 }
@@ -8486,7 +8417,7 @@ void hut() {
 	while (true) {
 		if (poison) {
 			if (infection_stage >= 10) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|\033[31m                             GAME OVER                             \033[36m|\n"					\
@@ -8508,7 +8439,7 @@ void hut() {
 				hut_cycle = true, gas_gas_gas = true;
 				ndeath++;
 				temp_data(0);
-				system("pause >NUL");
+				wait();
 				main();
 			}
 		}
@@ -8523,7 +8454,7 @@ void hut() {
 			}
 			firhut = false;
 		}
-		system("cls");
+		clear();
 		if (hut_cycle) {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8585,7 +8516,7 @@ void hut() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
 					"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -8606,7 +8537,7 @@ void hut() {
 					"|===================================================================|\033[0m";
 				door1_1 = "Входная дверь                                                     1";
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '2':
 			nmoves++;
@@ -8618,7 +8549,7 @@ void hut() {
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (isHasMask) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8689,7 +8620,7 @@ void hut() {
 					"|===================================================================|\033[0m";
 				infection_stage += 2;
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '4':
 			nmoves++;
@@ -8702,7 +8633,7 @@ void hut() {
 //спальня хижины 
 void room1() {
 	while (true) {
-		system("cls");
+		clear();
 		if (firroo) {
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8763,7 +8694,7 @@ void room1() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -8782,11 +8713,11 @@ void room1() {
 				"|\033[0mНичего интересного...                                              \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -8803,11 +8734,11 @@ void room1() {
 				"|\033[0mПод ней лежал скелет...интересненько...                            \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (house2_com) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -8827,7 +8758,7 @@ void room1() {
 					"|\033[0mНичего интересного...                                              \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 			else {
 				if (Language)
@@ -8851,7 +8782,7 @@ void room1() {
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
 				isHasKey4 = true, house2_com = true;
-				system("pause >NUL");
+				wait();
 			}
 			break;
 		case '4':
@@ -8866,7 +8797,7 @@ void room1() {
 void dacha() {
 	while (true) {
 		bool did_save = false;
-		system("cls");
+		clear();
 		if (!fit) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -9023,7 +8954,7 @@ void dacha() {
 		else if (isHasMeat && fit) {
 			if (gig) {
 				while (!did_save) {
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 						"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -9043,7 +8974,7 @@ void dacha() {
 						break;
 					case '2':
 						gig = false;
-						system("cls");
+						clear();
 						nhelp++;
 						nmoves++;
 						did_save = true;
@@ -9058,7 +8989,7 @@ void dacha() {
 						break;
 					case '4':
 						gig = false;
-						system("cls");
+						clear();
 						nhelp++;
 						nmoves++;
 						did_save = true;
@@ -9159,7 +9090,7 @@ void dacha() {
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (isHasBrick || home_open || house3_com) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -9197,11 +9128,11 @@ void dacha() {
 					"|===================================================================|\033[0m";
 				isHasBrick = true;
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (!home_open) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -9219,7 +9150,7 @@ void dacha() {
 					"|\033[0mЗакрыто с другой стороны...                                        \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 			else {
 				if (Language)
@@ -9236,13 +9167,13 @@ void dacha() {
 					"|\033[0mВы подошли к крыльцу и открыли входную дверь...                    \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				home();
 			}
 			break;
 		case '4':
 			nmoves++;
-			system("cls");
+			clear();
 			if (home_open) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -9260,7 +9191,7 @@ void dacha() {
 					"|\033[0mЛучше зайти через дверь...                                         \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 			else if (isHasBrick) {
 				if (Language)
@@ -9281,7 +9212,7 @@ void dacha() {
 					"|\033[0mВы аккуратно залезли через окно...                                 \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				home();
 			}
 			else if (!isHasBrick) {
@@ -9301,7 +9232,7 @@ void dacha() {
 					"|\033[0m...хм..стеклянное окно...                                          \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 			break;
 		case '5':
@@ -9315,7 +9246,7 @@ void dacha() {
 //беседка
 void pavilion() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -9344,7 +9275,7 @@ void pavilion() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|\033[31m                            DON'T DRINK                            \033[36m|\n"					\
@@ -9363,7 +9294,7 @@ void pavilion() {
 				"|\033[31m" << ru_dead_message << "\033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			ndeath++;
 			main();
 			break;
@@ -9377,7 +9308,7 @@ void pavilion() {
 //дом дачи
 void home() {
 	while (true) {
-		system("cls");
+		clear();
 		if (!fir) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -9618,7 +9549,7 @@ void home() {
 void beroom() {
 	while (true) {
 		bool did_sans = false;
-		system("cls");
+		clear();
 		if (fig) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -9773,7 +9704,7 @@ void beroom() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -9791,11 +9722,11 @@ void beroom() {
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
 			sans = true, did_sans = true;
-			system("pause >NUL");
+			wait();
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -9816,11 +9747,11 @@ void beroom() {
 				"|\033[0mА...нет. тоже пусто...                                             \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			hide_mouse_cursor();
 			PlaySound(MAKEINTRESOURCE(5), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
 			cout << "\033[36m|================== \033[31mBase_Escape \033[36m===================|\n"		\
@@ -9838,7 +9769,7 @@ void beroom() {
 				cout << "|\033[33mНажмите любую клавишу для продолжения...\033[36m          |\n"			\
 				"|==================================================|\033[0m";
 			show_mouse_cursor();
-			system("pause >NUL");
+			wait();
 			if (OST)
 				PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
 			else
@@ -9860,10 +9791,10 @@ void beroom() {
 void liroom() {
 	while (true) {
 		bool did_save = false;
-		system("cls");
+		clear();
 		if (tipr) {
 			while (!did_save) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -9883,7 +9814,7 @@ void liroom() {
 					break;
 				case '2':
 					tipr = false;
-					system("cls");
+					clear();
 					nhelp++;
 					nmoves++;
 					did_save = true;
@@ -9898,7 +9829,7 @@ void liroom() {
 					break;
 				case '4':
 					tipr = false;
-					system("cls");
+					clear();
 					nhelp++;
 					nmoves++;
 					did_save = true;
@@ -10059,7 +9990,7 @@ void liroom() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|\033[31m                            DON'T SLEEP                            \033[36m|\n"						\
@@ -10080,14 +10011,14 @@ void liroom() {
 				"|\033[31m" << ru_dead_message << "\033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			fig2 = false;
 			ndeath++;
 			main();
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -10112,11 +10043,11 @@ void liroom() {
 				"|\033[0mИнтересно...вы убрали книгу на место...                            \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (isHasAxe || house3_com) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -10154,7 +10085,7 @@ void liroom() {
 					"|===================================================================|\033[0m";
 				isHasAxe = true, house3_com = true, tipr = true;
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '4':
 			nmoves++;
@@ -10168,7 +10099,7 @@ void liroom() {
 void cottage() {
 	while (true) {
 		bool kitchen_did = false;
-		system("cls");
+		clear();
 		if (!fig3) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -10325,7 +10256,7 @@ void cottage() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|\033[31m                             DON'T EAT                             \033[36m|\n"					\
@@ -10354,7 +10285,7 @@ void cottage() {
 				"|\033[31m" << ru_dead_message << "  \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...                             \033[36m|\n"					\
 				"|=====================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			fig3 = true;
 			Death_Kitchen1 = true, kitchen_did = true;
 			ndeath++;
@@ -10387,11 +10318,11 @@ void cottage() {
 //мастерская коттеджа
 void cot_workshop() {
 	while (true) {
-		system("cls");
+		clear();
 		if (typ) {
 			bool did_save = false;
 			while (!did_save) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"
 					"|\033[0m                 Do you want to save your progress?                \033[36m|\n"
@@ -10411,7 +10342,7 @@ void cot_workshop() {
 					break;
 				case '2':
 					typ = false;
-					system("cls");
+					clear();
 					nhelp++;
 					nmoves++;
 					did_save = true;
@@ -10426,7 +10357,7 @@ void cot_workshop() {
 					break;
 				case '4':
 					typ = false;
-					system("cls");
+					clear();
 					nhelp++;
 					nmoves++;
 					did_save = true;
@@ -10585,7 +10516,7 @@ void cot_workshop() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -10603,11 +10534,11 @@ void cot_workshop() {
 				"|\033[0mА на какие-то специфические игрушки...                             \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (oil || house4_com) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -10665,11 +10596,11 @@ void cot_workshop() {
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -10687,7 +10618,7 @@ void cot_workshop() {
 				"|\033[0mВы решили их не трогать...                                         \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '4':
 			nmoves++;
@@ -10700,7 +10631,7 @@ void cot_workshop() {
 //ванна коттеджа
 void cot_cabinet() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                        \033[33mChapter 6. Village. \033[36m                       |\n"				\
@@ -10731,7 +10662,7 @@ void cot_cabinet() {
 			"|===================================================================|\033[0m";
 		switch (_getch()) {
 		case '1':
-			system("cls");
+			clear();
 			nmoves++;
 			hide_mouse_cursor();
 			PlaySound(MAKEINTRESOURCE(7), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
@@ -10769,7 +10700,7 @@ void cot_cabinet() {
 //второй этаж коттеджа
 void floor_2() {
 	while (true) {
-		system("cls");
+		clear();
 		if (!fit2) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -10920,7 +10851,7 @@ void floor_2() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (lamp_oil || lamp || house4_com) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -10936,7 +10867,7 @@ void floor_2() {
 					"|\033[0mЗдесь больше нет ничего интересного...                             \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 			}
 			else if (!lamp) {
 				if (Language)
@@ -10964,12 +10895,12 @@ void floor_2() {
 				lamp = true;
 				if (oil && lamp)
 					lamp_oil = true, lamp = false, oil = false, house4_com = true;
-				system("pause >NUL");
+				wait();
 			}
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                             \033[31mGAME OVER\033[36m                             |\n"					\
@@ -10992,14 +10923,14 @@ void floor_2() {
 				"|\033[31m" << ru_dead_message << "\033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			fit1 = true, fit2 = true;
 			ndeath++;
 			main();
 			break;
 		case '3':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11014,11 +10945,11 @@ void floor_2() {
 				"|\033[0mНет там никакого бугимена!                                         \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '4':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11034,7 +10965,7 @@ void floor_2() {
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
 			fit2 = true;
-			system("pause >NUL");
+			wait();
 			cottage();
 			break;
 		}
@@ -11043,7 +10974,7 @@ void floor_2() {
 //церковь 
 void church() {
 	while (true) {
-		system("cls");
+		clear();
 		if (!T_virus) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"		\
@@ -11198,7 +11129,7 @@ void church() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 				"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11217,11 +11148,11 @@ void church() {
 				"|\033[0mУвы, но подняться невозможно...                                    \033[36m|\n"					\
 				"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 				"|===================================================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case '2':
 			nmoves++;
-			system("cls");
+			clear();
 			if (isHasMask) {
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -11259,7 +11190,7 @@ void church() {
 					"|===================================================================|\033[0m";
 				isHasMask = true;
 			}
-			system("pause >NUL");
+			wait();
 			break;
 		case '3':
 			nmoves++;
@@ -11276,7 +11207,7 @@ void church() {
 //катакомбы
 void catacombs() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language) {
 			if (church_open)
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -11330,7 +11261,7 @@ void catacombs() {
 		switch (_getch()) {
 		case '1':
 			nmoves++;
-			system("cls");
+			clear();
 			if (church_open) {
 				if (lamp_oil) {
 					isHasKey4 = false, isHasMeat = false, isHasMask = false, isHasBrick = false, isHasAxe = false, oil = false, lamp = false, lamp_oil = false, poison = false;
@@ -11355,7 +11286,7 @@ void catacombs() {
 						"|\033[0mНадо найти хоть какой-то источник света...                         \033[36m|\n"					\
 						"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 						"|===================================================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					church();
 				}
 			}
@@ -11381,7 +11312,7 @@ void catacombs() {
 				church_open = true;
 				if (chg)
 					isHasAxe = false;
-				system("pause >NUL");
+				wait();
 				church();
 			}
 			if (!isHasAxe) {
@@ -11399,7 +11330,7 @@ void catacombs() {
 					"|\033[0mИ чем ты собрался их рубить?                                       \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				church();
 			}
 			break;
@@ -11413,7 +11344,7 @@ void catacombs() {
 //глубиные катакомбы 
 void deep_catacombs() {
 	while (true) {
-		system("cls");
+		clear();
 		if (!tigr) {
 			if (Language) {
 				cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -11571,7 +11502,7 @@ void deep_catacombs() {
 		case 'x':
 			if (nhelp > 0) {
 				nmoves++;
-				system("cls");
+				clear();
 				if (isHasKey5) {
 					if (Language)
 						cout << "\033[36m|================ \033[31mTip \033[36m================|\n"
@@ -11583,7 +11514,7 @@ void deep_catacombs() {
 						"|\033[0mИди в третью комнату             \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 				}
@@ -11598,7 +11529,7 @@ void deep_catacombs() {
 						"|\033[0mНайди ключ во второй комнате     \033[36m|\n"
 						"|\033[33mНажмите любую клавишу...         \033[36m|\n"
 						"|=================================|\033[0m";
-					system("pause >NUL");
+					wait();
 					qhelp++;
 					nhelp--;
 				}
@@ -11609,7 +11540,7 @@ void deep_catacombs() {
 }
 //комната с книжкой
 void deep_room1() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11630,8 +11561,8 @@ void deep_room1() {
 		"|\033[0mВы открыли его...                                                  \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
-	system("cls");
+	wait();
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11648,8 +11579,8 @@ void deep_room1() {
 		"|\033[0mВы открыли его...                                                  \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
-	system("cls");
+	wait();
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11666,8 +11597,8 @@ void deep_room1() {
 		"|\033[0mВы открыли его...                                                  \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
-	system("cls");
+	wait();
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11684,12 +11615,12 @@ void deep_room1() {
 		"|\033[0mСтоп...вы закрыли его и вышли из комнаты...                        \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
+	wait();
 	deep_catacombs();
 }
 //комната с ключём 
 void deep_room2() {
-	system("cls");
+	clear();
 	if (isHasKey5) {
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
@@ -11707,7 +11638,7 @@ void deep_room2() {
 			"|\033[0mЗдесь больше не было ничего интересного...                         \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
+		wait();
 		deep_catacombs();
 	}
 	if (!isHasKey5) {
@@ -11737,14 +11668,14 @@ void deep_room2() {
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
 		isHasKey5 = true;
-		system("pause >NUL");
+		wait();
 		deep_catacombs();
 	}
 }
 //комната сюжета
 void deep_room3() {
 	while (true) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 			"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11767,7 +11698,7 @@ void deep_room3() {
 			"|===================================================================|\033[0m";
 		switch (_getch()) {
 		case '1':
-			system("cls");
+			clear();
 			nmoves++;
 			if (!isHasKey5) {
 				if (Language)
@@ -11784,11 +11715,11 @@ void deep_room3() {
 					"|\033[0mЧем дверь открывать планируешь?                                    \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				deep_catacombs();
 			}
 			else {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 					"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11809,7 +11740,7 @@ void deep_room3() {
 					"|\033[0mВидимо, за вами пришли...надо бежать...                            \033[36m|\n"					\
 					"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 					"|===================================================================|\033[0m";
-				system("pause >NUL");
+				wait();
 				if (!isHasTrap)
 					good_ending = false;
 				if (isHasTrap)
@@ -11826,7 +11757,7 @@ void deep_room3() {
 }
 //комната взаимодействия
 void deep_room4() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=========================== \033[31mBase_Escape \033[36m===========================|\n"	\
 		"|                        \033[33mChapter 6. Village. \033[36m                       |\n"					\
@@ -11856,7 +11787,7 @@ void deep_room4() {
 		"|\033[0m...странное место...вы развернулись и ушли в коридор...            \033[36m|\n"					\
 		"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 		"|===================================================================|\033[0m";
-	system("pause >NUL");
+	wait();
 	deep_catacombs();
 }
 //конец игры
@@ -11866,7 +11797,7 @@ void endgame() {
 	remove(ofstr_temp.c_str());
 	if (!free_mode_playing)
 		remove(ofstr_save.c_str());
-	system("cls");
+	clear();
 	string files, space_end;
 	if (good_ending) {
 		if (Language)
@@ -11895,8 +11826,8 @@ void endgame() {
 			"|\033[0mКажется ваше \"путешествие\" наконец закончилось...                  \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 	}
 	else {
 		if (Language)
@@ -11920,8 +11851,8 @@ void endgame() {
 			"|\033[0mУвы, но выжить вам было не суждено...                              \033[36m|\n"					\
 			"|\033[33mНажмите любую клавишу для продолжения...\033[36m                           |\n"					\
 			"|===================================================================|\033[0m";
-		system("pause >NUL");
-		system("cls");
+		wait();
+		clear();
 	}
 	if (!free_mode_playing) {
 		if (nsave >= 5 && !achievements1) {
@@ -11940,8 +11871,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements1 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (ndeath == 0 && !achievements2) {
 			if (Language)
@@ -11959,8 +11890,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements2 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (nsave == 0 && !achievements3) {
 			if (Language)
@@ -11978,8 +11909,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements3 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (nmoves > 325 && !achievements4) {
 			if (Language)
@@ -11997,8 +11928,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements4 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (nmoves < 275 && !achievements5) {
 			if (Language)
@@ -12016,8 +11947,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements5 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (somebody && !achievements6) {
 			if (Language)
@@ -12035,8 +11966,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements6 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (isHasAmongus && !achievements7) {
 			if (Language)
@@ -12054,8 +11985,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements7 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (gas_gas_gas && !achievements8) {
 			if (Language)
@@ -12073,8 +12004,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements8 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (sans && !achievements9) {
 			if (Language)
@@ -12094,8 +12025,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements9 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (qhelp >= 24 && !achievements10) {
 			if (Language)
@@ -12113,8 +12044,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements10 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (Death_Kitchen && Death_Kitchen1 && !achievements11) {
 			if (Language)
@@ -12132,8 +12063,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements11 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 		if (num_seat > 5 && !achievements12) {
 			if (Language)
@@ -12151,8 +12082,8 @@ void endgame() {
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
 			achievements12 = true;
-			system("pause >NUL");
-			system("cls");
+			wait();
+			clear();
 		}
 	}
 	create_folder();
@@ -12328,21 +12259,21 @@ void endgame() {
 	GlobalFree(hMem);
 	if (download_0_1 == 32) {
 		if (Language) {
-			system("cls");
+			clear();
 			cout << "Downloading the first version of Base_Escape... \n";
 			cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 			downloaded_file = "base_escape_0.1.exe";
 			download_file(download_url_0_1);
 		}
 		else {
-			system("cls");
+			clear();
 			cout << "Downloading the first version of Base_Escape... \n";
 			cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 			downloaded_file = "base_escape_0.1_rus.exe";
 			download_file(download_url_0_1_rus);
 		}
 	}
-	code1 = "?", code2 = "?", code3 = "?", code4 = "?", ndeath = 0, nsave = 0, nmoves = 0, timr = 45, x_pl = 0, infection_stage = 0, num_seat = 0, firw = true, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, isHasTrap = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
+	code1 = "?", code2 = "?", code3 = "?", code4 = "?", ndeath = 0, nsave = 0, nmoves = 0, timr = 45000, x_pl = 0, infection_stage = 0, num_seat = 0, firw = true, to_yard = false, to_basement = false, door_close = true, git = true, comp = false, bag_com = false, isHasKnife = false, isHasKey1 = false, figt = true, isHasHammer = false, isHasValve = false, isHasPotatoes = false, pig_eat = false, windows_broke = false, isHasCrowbar = false, isHasMaul = false, isHasExplosives = false, isHasKey2 = false, isHasPlanks = false, isHasKey3 = false, bedroomOpen = false, isHasBooks = false, isHasFirecracker = false, isHasAmongus = false, escpe = false, gameover = false, first_run = true, look_around = false, isHasTrap = false, loop = false, first = true, firhut = true, firroo = true, meat_open = false, isHasAxe = false, isHasBrick = false, lamp = false, oil = false, lamp_oil = false, house1_com = false, house2_com = false, house3_com = false, house4_com = false, church_open = false, isHasKey4 = false, im_gay = true, isHasMeat = false, i_love_furry = true, isHasMask = false, poison = false, god = true, dog_die = false, home_open = false, fit = true, fir = true, fig = false, fig2 = false, fig3 = true, fit1 = true, fit2 = true, chg = false, T_virus = true, catag = true, tigr = true, isHasKey5 = false, free_mode_playing = false;
 	main();
 }
 
@@ -12352,7 +12283,7 @@ void endgame() {
 void main_menu() {
 	read_qsave();
 	while (true) {
-		system("cls");
+		clear();
 		bool download_installer = false;
 		float shrek = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 		float shrek_probability = static_cast<float>(0.000125);
@@ -12361,7 +12292,7 @@ void main_menu() {
 		float wasted = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 		if (wasted_left > 0)
 			wasted = 1;
-		float wasted_probability = static_cast<float>(0.12);
+		float wasted_probability = static_cast<float>(0.0365);
 		if (fist_time_in_menu) {
 			wasted = 1;
 			fist_time_in_menu = false;
@@ -12414,7 +12345,7 @@ void main_menu() {
 				"|--------------------------> \033[32m" << chet << "\033[36m <--------------------------|\n"			\
 				"|\033[33mНажмите любую клавишу, чтобы продолжить и скопировать код...    \033[36m|\n"					\
 				"|================================================================|\n";
-			system("pause >NUL");
+			wait();
 			const char* text = cheta.c_str();
 			const size_t len = strlen(text) + 1;
 			HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
@@ -12425,7 +12356,7 @@ void main_menu() {
 			SetClipboardData(CF_TEXT, hMem);
 			CloseClipboard();
 			GlobalFree(hMem);
-			system("cls");
+			clear();
 		}
 		if (Language) {
 			if (!travel_com) {
@@ -12444,7 +12375,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.7\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.8\033[36m ==|\n"		\
 				"|\033[0m        Main menu         \033[36m|\n"			\
 				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
@@ -12520,7 +12451,7 @@ void main_menu() {
 					cheat_panel = "|\033[0mГруппа обмана            +\033[36m|\n";
 			}
 			if (!wasted_translate)
-				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.7\033[36m ==|\n"		\
+				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.8\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -12627,12 +12558,12 @@ void main_menu() {
 			delte();
 			break;
 		case 56:
-			system("cls");
+			clear();
 			if (!travel_com) {
 				bool enter_travel = false;
 				end_code1 = to_string(end_code);
 				while (!enter_travel) {
-					system("cls");
+					clear();
 					if (Language)
 						cout << "\033[36m======== \033[31mTraveler Code\033[36m ========\033[0m\n"	\
 						"\033[36m|\033[0mEnter traveler code         1\033[36m|\033[0m\n"			\
@@ -12685,7 +12616,7 @@ void main_menu() {
 		case 27:
 			exit_cycle = true;
 			while (exit_cycle) {
-				system("cls");
+				clear();
 				if (Language)
 					cout << "\033[36m|================================|\n"	\
 					"| \033[33mAre you sure you want to exit?\033[36m |\n"	\
@@ -12705,7 +12636,7 @@ void main_menu() {
 			break;
 		case 43:
 			if (travel_com) {
-				system("cls");
+				clear();
 				show_cursor();
 				cout << "\033[36m=======================\033[0m\n"
 					"\033[36m|\033[31m     CHEAT PANEL     \033[36m|\n"
@@ -12736,7 +12667,7 @@ void main_menu() {
 				}
 				else if (im_furry_gay == "BUG") {
 					if (!test) {
-						system("cls");
+						clear();
 						if (Language)
 							cout << "\033[36m|==============================================|\n"							\
 							"|\033[0m  Code for archive \"\033[31mBONUS\033[0m\": \033[32m" << password_for_archive << "  \033[36m|\n"	\
@@ -12763,7 +12694,7 @@ void main_menu() {
 						GlobalFree(hMem);
 					}
 					else {
-						system("cls");
+						clear();
 						cout << "\033[36m|======== \033[31mNot available! \033[36m========|\n"	\
 							"|\033[0m Not available in test version! \033[36m|\n"				\
 							"|\033[33mPress any key to continue...    \033[36m|\n"				\
@@ -12801,7 +12732,7 @@ void main_menu() {
 							MessageBoxA(NULL, "Файл snake_game.exe был удален, перемещен или переименован!", "Ошибка: Файл отсутствует!", MB_ICONERROR | MB_OK);
 					}
 					else {
-						system("cls");
+						clear();
 						cout << "\033[36m|======== \033[31mNot available! \033[36m========|\n"	\
 							"|\033[0m Not available in test version! \033[36m|\n"				\
 							"|\033[33mPress any key to continue...    \033[36m|\n"				\
@@ -12839,7 +12770,7 @@ void main_menu() {
 							MessageBoxA(NULL, "Файл RPG_DEMO.exe был удален, перемещен или переименован!", "Ошибка: Файл отсутствует!", MB_ICONERROR | MB_OK);
 					}
 					else {
-						system("cls");
+						clear();
 						cout << "\033[36m|======== \033[31mNot available! \033[36m========|\n"	\
 							"|\033[0m Not available in test version! \033[36m|\n"				\
 							"|\033[33mPress any key to continue...    \033[36m|\n"				\
@@ -12871,7 +12802,7 @@ void main_menu() {
 							MessageBoxA(NULL, "Файл base_escape_NONconsole.exe был удален, перемещен или переименован!", "Ошибка: Файл отсутствует!", MB_ICONERROR | MB_OK);
 					}
 					else {
-						system("cls");
+						clear();
 						cout << "\033[36m|======== \033[31mNot available! \033[36m========|\n"	\
 							"|\033[0m Not available in test version! \033[36m|\n"				\
 							"|\033[33mPress any key to continue...    \033[36m|\n"				\
@@ -12880,7 +12811,7 @@ void main_menu() {
 					}
 				}
 				else if (im_furry_gay == "IM FURRY FEMBOY") {
-					system("cls");
+					clear();
 					for (int i = 0; i == 0;) {
 						cout << "\r\033[31mME TOO! <3\033[0m" << flush;
 						pause(200);
@@ -12899,7 +12830,7 @@ void main_menu() {
 					}
 				}
 				else if (im_furry_gay == "IM DEVELOPER") {
-					system("cls");
+					clear();
 					if (!developer_mod) {
 						show_cursor();
 						cout << "Hello \033[36mLonewolf239\033[0m! Enter your password: \033[32m";
@@ -12928,7 +12859,7 @@ void main_menu() {
 					}
 				}
 				else if (im_furry_gay == "LOVE IS NOT EXTREMISM") {
-					system("cls");
+					clear();
 					cout <<
 						"\033[48;2;255;0;0m                                                  \033[0m\n"
 						"\033[48;2;255;0;0m                                                  \033[0m\n"
@@ -12948,10 +12879,10 @@ void main_menu() {
 						"\033[48;2;148;0;211m                                                  \033[0m\n"
 						"\033[48;2;148;0;211m                                                  \033[0m\n"
 						"\033[48;2;148;0;211m                                                  \033[0m";
-					system("pause >NUL");
+					wait();
 				}
 				else {
-					system("cls");
+					clear();
 					cout << "\033[36m|======= \033[31mDoesn' exist \033[36m=======|\n"	\
 						"|\033[0m    No such code exists!    \033[36m|\n"				\
 						"|\033[33mPress any key to continue...\033[36m|\n"				\
@@ -12997,7 +12928,7 @@ void main_menu() {
 						MessageBoxA(NULL, "Файл base_cheats.exe был удален, перемещен или переименован!", "Ошибка: Файл отсутствует!", MB_ICONERROR | MB_OK);
 				}
 				else {
-					system("cls");
+					clear();
 					cout << "\033[36m|======== \033[31mNot available! \033[36m========|\n"	\
 						"|\033[0m Not available in test version! \033[36m|\n"				\
 						"|\033[33mPress any key to continue...    \033[36m|\n"				\
@@ -13008,7 +12939,7 @@ void main_menu() {
 			break;
 		}
 		while (download_installer) {
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|=================== \033[31mRestoring Base_Escape\033[36m ===================|\n"
 				"|\033[0m This function is needed in case you have damaged game files \033[36m|\n"
@@ -13028,7 +12959,7 @@ void main_menu() {
 			int choice_u = _getch();
 			switch (choice_u) {
 			case 13:
-				system("cls");
+				clear();
 				cout << "Downloading the Base_Escape installer...\n";
 				cout << "\033[32m[      \033[33mReceiving the information...      \033[32m] \033[33m0\033[0m / \033[33m0\033[0mMB \033[36m0.00MB/s\033[0m" << flush;
 				downloaded_file = "Base_escape_setup.exe";
@@ -13047,7 +12978,7 @@ void levels() {
 	bool in_levels = true;
 	free_mode_playing = true;
 	if (first_free_mode_warning) {
-		system("cls");
+		clear();
 		first_free_mode_warning = false;
 		hide_mouse_cursor();
 		if (Language)
@@ -13058,12 +12989,12 @@ void levels() {
 			cout << "\033[36m|======================== \033[31mПредупреждение \033[36m========================|\n"
 			"|\033[0m       Достижения нельзя получить в режиме выбора локации       \033[36m|\n"
 			"|================================================================|\033[0m\n";
-		pause(3500);
+		pause(2000);
 		show_mouse_cursor();
-		system("cls");
+		clear();
 	}
 	while (in_levels) {
-		system("cls");
+		clear();
 		if (Language) {
 			cout << "\033[36m|======== \033[31mLocation selection\033[36m =======|" << endl;
 			cout << "|\033[33mWhat location do you want to go to?\033[36m|\n"		\
@@ -13143,12 +13074,12 @@ void settings() {
 				config_ini.close();
 			}
 		}
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|========= \033[31mSettings \033[36m=========|\n"					\
 			"|\033[0mРусский\\\033[33mEnglish\033[0m            1\033[36m|\n"			\
 			"|\033[0m\033[48;2;50;50;50mMusic\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                 2\033[0m\033[36m|\n"	\
-			"|\033[0mFont size: " << font_size << "         3\033[36m|\n"				\
+			"|\033[0mFont size: " << font_size << "3\033[36m|\n"				\
 			"|\033[0m\033[48;2;50;50;50mFont: " << font_type << "\033[48;2;50;50;50m4\033[0m\033[36m|\n"				\
 			"|\033[0mExit                     ESC\033[36m|\n"							\
 			"|============================|\033[0m";
@@ -13156,7 +13087,7 @@ void settings() {
 			cout << "\033[36m|======== \033[31mНастройки \033[36m=========|\n"					\
 			"|\033[33mРусский\033[0m\\English            1\033[36m|\n"					\
 			"|\033[0m\033[48;2;50;50;50mМузыка\033[33m" << off_on << "\033[0m\033[48;2;50;50;50m                2\033[0m\033[36m|\n"	\
-			"|\033[0mРазмер шрифта: " << font_size << "     3\033[36m|\n"				\
+			"|\033[0mРазмер шрифта: " << font_size << "3\033[36m|\n"				\
 			"|\033[0m\033[48;2;50;50;50mШрифт: " << font_type << "\033[48;2;50;50;50m4\033[0m\033[36m|\n"				\
 			"|\033[0mВыйти                    ESC\033[36m|\n"							\
 			"|============================|\033[0m" << endl;
@@ -13179,13 +13110,13 @@ void settings() {
 			break;
 		case 51:
 			font_size_num++;
-			if (font_size_num > 3)
+			if (font_size_num > 4)
 				font_size_num = 0;
 			font_size_setup();
 			break;
 		case 52:
 			font_type_num++;
-			if (font_type_num > 4)
+			if (font_type_num > 6)
 				font_type_num = 0;
 			font_size_setup();
 			break;
@@ -13199,7 +13130,7 @@ void settings() {
 void developer() {
 	bool in_developer = true;
 	while (in_developer) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|===== \033[31mDevelopers \033[36m=====|\n"	\
 			"|\033[33mProgramming:          \033[36m|\n"			\
@@ -13287,7 +13218,7 @@ void developer() {
 }
 //соц.сети
 void soc_netw() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|=== \033[31mSocial network \033[36m===|\n"
 		"|\033[33mLonewolf239:          \033[36m|\n"
@@ -13324,18 +13255,13 @@ void soc_netw() {
 			"|\033[33mНажмите любой ключ... \033[36m|\n"
 			"|======================|\033[0m";
 	}
-	system("pause >NUL");
+	wait();
 }
 //список обновления
 void updet_list() {
-	system("cls");
+	clear();
 	if (Language)
 		cout << "\033[36m|============ \033[31mList of changes \033[36m============|\n"		\
-		"|\033[33m            Changes in v3.9.4            \033[36m|\n"				\
-		"|\033[0m*Complete interface overhaul             \033[36m|\n"				\
-		"|\033[0m*Various visual fixes                    \033[36m|\n"				\
-		"|\033[0m*Minor code optimization                 \033[36m|\n"				\
-		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
 		"|\033[33m           Changes in v3.9.4.1           \033[36m|\n"				\
 		"|\033[0m*Redesign of the sub-item: \"Achievements\"\033[36m|\n"			\
 		"|\033[0m*Added explanations to achievements      \033[36m|\n"				\
@@ -13361,11 +13287,6 @@ void updet_list() {
 		"|=========================================|\033[0m\n";
 	else
 		cout << "\033[36m|============= \033[31mСписок изменений \033[36m=============|\n"		\
-		"|\033[33m              Изменения v3.9.4              \033[36m|\n"				\
-		"|\033[0m*Полная переработка интерфейса              \033[36m|\n"				\
-		"|\033[0m*Различные визуальные исправления           \033[36m|\n"				\
-		"|\033[0m*Незначительная оптимизация кода            \033[36m|\n"				\
-		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
 		"|\033[33m             Изменения v3.9.4.1             \033[36m|\n"				\
 		"|\033[0m*Редизайн подпункта: \"Достижения\"           \033[36m|\n"				\
 		"|\033[0m*Добавлены пояснения к достижениям          \033[36m|\n"				\
@@ -13386,16 +13307,21 @@ void updet_list() {
 		"|\033[33m             Изменения v3.9.4.7             \033[36m|\n"				\
 		"|\033[0m*Добавлена возможность менять шрифт         \033[36m|\n"				\
 		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.8             \033[36m|\n"				\
+		"|\033[0m*Добавлены новые шрифты                     \033[36m|\n"				\
+		"|\033[0m*Небольшие визуальные изменения             \033[36m|\n"				\
+		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
+		"|\033[0m*Удучшения стабильности                     \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mНажмите любую клавишу для продолжения...    \033[36m|\n"				\
 		"|============================================|\033[0m\n";
-	system("pause >NUL");
+	wait();
 }
 //достижения
 void achievements() {
 	bool in_achievements = true;
 	while (in_achievements) {
-		system("cls");
+		clear();
 		read_qsave();
 		if (firw) {
 			hide_mouse_cursor();
@@ -13410,7 +13336,7 @@ void achievements() {
 			firw = false;
 			pause(2000);
 			show_mouse_cursor();
-			system("cls");
+			clear();
 		}
 		string do1, do2, do3, do4, do5, do6, do7, do8, do9, do10, do11, do12;
 		if (Language) {
@@ -13526,7 +13452,7 @@ void achievements() {
 		int choice = _getch();
 		switch (choice) {
 		case 49:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do1 << "                 Coward!                \033[36m|\n"	\
@@ -13541,10 +13467,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 50:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do2 << "       Guided by the right path...      \033[36m|\n"	\
@@ -13559,10 +13485,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 51:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do3 << "          Save is for the weak!         \033[36m|\n"	\
@@ -13577,10 +13503,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 52:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do4 << "        Look under every stone...       \033[36m|\n"	\
@@ -13595,10 +13521,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 53:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do5 << "               Speedrunner              \033[36m|\n"	\
@@ -13613,10 +13539,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 54:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do6 << "        Somebody once told me...        \033[36m|\n"	\
@@ -13631,10 +13557,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 55:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do7 << "                 AMOGUS                 \033[36m|\n"	\
@@ -13649,10 +13575,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 56:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do8 << "               Too stuffy               \033[36m|\n"	\
@@ -13667,10 +13593,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 57:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do9 << "              I'm not fat.              \033[36m|\n"	\
@@ -13687,10 +13613,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 48:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do10 << "             Great dumbass              \033[36m|\n"	\
@@ -13705,10 +13631,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 45:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do11 << "         Once bitten, twice shy         \033[36m|\n"	\
@@ -13723,10 +13649,10 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 61:
-			system("cls");
+			clear();
 			if (Language)
 				cout << "\033[36m|========================================|\n"	\
 				"|" << do12 << "                 Elder                  \033[36m|\n"	\
@@ -13741,7 +13667,7 @@ void achievements() {
 				"|=========================================|\n"	\
 				"|\033[33mНажмите любую клавишу для продолжения... \033[36m|\n"	\
 				"|=========================================|\033[0m";
-			system("pause >NUL");
+			wait();
 			break;
 		case 27:
 			in_achievements = false;
@@ -13762,7 +13688,7 @@ void delte() {
 	int choice = -1, del;
 	bool cyc = true;
 	while (cyc) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|======= \033[31mDelete game files \033[36m=======|\n"
 			"|\033[0mWhat files do you want to delete?\033[36m|\n"
@@ -13817,7 +13743,7 @@ void delte() {
 			cyc = true;
 		}
 	}
-	system("cls");
+	clear();
 	if (del != 27)
 		show_cursor();
 	if (choice == 0) {
@@ -13979,8 +13905,10 @@ void delte() {
 			cout << endl << endl << endl << "		DELETING...";
 			pause(1000);
 			string ofstr = folder + "temp_data.ini";
-			remove(ofstr.c_str());
-			cout << endl << endl << endl << "		ACCESS FILES SUCCESSFULLY DELETED";
+			if (remove(ofstr.c_str()) != 0)
+				cout << endl << endl << endl << "		ERROR DELETING TEMPORARY FILES";
+			else
+				cout << endl << endl << endl << "		TEMPORARY FILES SUCCESSFULLY DELETED";
 		}
 		else
 			cout << endl << endl << endl << endl << endl << "	 OOOO   KK  KK\n	OO  OO  KK KK\n	OO  OO  KKKK\n	OO  OO  KK KK\n	 OOOO   KK  KK";
@@ -13993,7 +13921,7 @@ void delte() {
 void trave1_code() {
 	bool in_travel_menu = true;
 	while (in_travel_menu) {
-		system("cls");
+		clear();
 		if (Language)
 			cout << "\033[36m|======================== \033[31mTraveler Menu \033[36m========================|\n"		\
 			"|\033[0mHi, thanks for taking a look here. Honestly, it's very nice.   \033[36m|\n"				\
@@ -14037,14 +13965,14 @@ void shrek_dancing() {
 	hide_mouse_cursor();
 	PlaySound(MAKEINTRESOURCE(2), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
 	pause(8000);
-	system("shutdown /r /t 00");
+	system("shutdown /r /t 2");
 	exit(0);
 }
 
 
 //сейв
 void save(int s) {
-	system("cls");
+	clear();
 	if (s == 1) {
 		create_folder();
 		string ofstr = folder + "save.txt";
@@ -14056,7 +13984,7 @@ void save(int s) {
 			nsave++;
 			pause(1500);
 			show_mouse_cursor();
-			system("cls");
+			clear();
 			if (!to_menu1)
 				forest();
 			else {
@@ -14077,7 +14005,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (isHasTrap) {
@@ -14088,7 +14016,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (!to_menu2)
@@ -14110,7 +14038,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (isHasTrap) {
@@ -14121,7 +14049,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (!to_menu3)
@@ -14143,7 +14071,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (isHasTrap) {
@@ -14154,7 +14082,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (!to_menu4)
@@ -14176,7 +14104,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (isHasTrap) {
@@ -14187,7 +14115,7 @@ void save(int s) {
 				nsave++;
 				pause(1500);
 				show_mouse_cursor();
-				system("cls");
+				clear();
 			}
 		}
 		if (!to_menu5)
@@ -14484,35 +14412,43 @@ void font_size_setup() {
 	bool bold = false;
 	if (font_size_num == 0) {
 		if (Language)
-			font_size = "\033[33mSmall  \033[0m";
+			font_size = "\033[33mSmall           \033[0m";
 		else
-			font_size = "\033[33mМелкий \033[0m";
+			font_size = "\033[33mМелкий      \033[0m";
 		X_font = 8;
 		Y_font = 16;
 	}
 	else if (font_size_num == 1) {
 		if (Language)
-			font_size = "\033[33mAverage\033[0m";
+			font_size = "\033[33mAverage         \033[0m";
 		else
-			font_size = "\033[33mСредний\033[0m";
+			font_size = "\033[33mСредний     \033[0m";
 		X_font = 10;
 		Y_font = 20;
 	}
 	else if (font_size_num == 2) {
 		if (Language)
-			font_size = "\033[33mBig    \033[0m";
+			font_size = "\033[33mBig             \033[0m";
 		else
-			font_size = "\033[33mБольшой\033[0m";
+			font_size = "\033[33mБольшой     \033[0m";
 		X_font = 12;
 		Y_font = 24;
 	}
-	else {
+	else if (font_size_num == 3) {
 		if (Language)
-			font_size = "\033[33mLarge  \033[0m";
+			font_size = "\033[33mLarge           \033[0m";
 		else
-			font_size = "\033[33mКрупный\033[0m";
+			font_size = "\033[33mКрупный     \033[0m";
 		X_font = 14;
 		Y_font = 28;
+	}
+	else {
+		if (Language)
+			font_size = "\033[33mVery Large      \033[0m";
+		else
+			font_size = "\033[33mОч. Крупный \033[0m";
+		X_font = 16;
+		Y_font = 32;
 	}
 	if (font_type_num == 0) {
 		if (Language)
@@ -14550,6 +14486,21 @@ void font_size_setup() {
 		else
 			font_type = "\033[33mTerminal            \033[0m";
 		font_name = L"Terminal";
+	}
+	else if (font_type_num == 5) {
+		if (Language)
+			font_type = "\033[33mSans Mono            \033[0m";
+		else
+			font_type = "\033[33mSans Mono           \033[0m";
+		font_name = L"DejaVu Sans Mono";
+	}
+	else if (font_type_num == 6) {
+		if (Language)
+			font_type = "\033[33mSans Mono (Bold)     \033[0m";
+		else
+			font_type = "\033[33mSans Mono (Жирный)  \033[0m";
+		font_name = L"DejaVu Sans Mono";
+		bold = true;
 	}
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	fontInfo.cbSize = sizeof(CONSOLE_FONT_INFOEX);
@@ -14634,7 +14585,7 @@ void setup_setting() {
 	SetWindowLong(console, GWL_STYLE, GetWindowLong(console, GWL_STYLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX & ~WS_MAXIMIZE);
 	srand(static_cast<unsigned int>(time(NULL)));
 	setlocale(LC_CTYPE, "rus");
-	system("cls");
+	clear();
 	string dev_folder = folder + "developer_key.txt";
 	ifstream developer_mod_file(dev_folder);
 	if (developer_mod_file.is_open()) {
