@@ -25,7 +25,7 @@
 using namespace std;
 
 //Текущая версия
-string current_version = "3.9.4.8", latest_version,
+string current_version = "3.9.4.9", latest_version,
 downloaded_file = "Base_escape_setup.exe",
 download_url = "https://base-escape.ru/downloads/Base_escape_setup.exe",
 download_url_0_1 = "https://base-escape.ru/downloads/base_escape_0.1.exe",
@@ -40,6 +40,7 @@ bool developer_mod = false;
 bool wasted_translate = false,
 fist_time_in_menu = true;
 int wasted_left = 0;
+
 
 //коды
 string
@@ -93,6 +94,7 @@ code_qsave_temp4 = "CODE", \
 code_qsave_temp5 = "CODE";
 const char* password_for_archive = "CODE";
 
+
 //HD Lonewolf239
 bool HB_Lonewolf239 = false,
 Happy_New_Year = false,
@@ -112,7 +114,6 @@ bool free_mode_playing = false, first_free_mode_warning = true;
 
 //основные настройки и достижения
 HANDLE hMutex = NULL;
-POINT p;
 RECT r;
 int x, y;
 int font_size_num = 0,
@@ -898,7 +899,7 @@ int main() {
 		int loading = 0, rand_loading = 0;
 		string loading_progressbar = "                                                                                                      ";
 		cout << loading_string;
-		cout << "\033[32mLoading 0% [" << loading_progressbar << "]\033[0m" << flush;
+		cout << "\033[32mLoading 0% [" << loading_progressbar << "]\033[0m             " << flush;
 		while (now_loading) {
 			rand_loading = 1 + rand() % 10;
 			if (!developer_mod) {
@@ -914,22 +915,29 @@ int main() {
 					}
 				}
 				if (loading >= 30 && !dont_did) {
+					bool check_update = false;
 					if (!IsInternetConnected()) {
 						int conection_attemps = 0;
+						show_mouse_cursor();
 						clear();
 						cout << loading_string;
-						cout << "\r\033[31mNo internet connection! Trying to connect again...\033[0m" << flush;
+						cout << "\r\033[31mNo internet connection! Trying to connect again... Check your internet connection...\033[0m" << flush;
 						while (true) {
 							pause(2500);
-							if (IsInternetConnected())
+							if (IsInternetConnected()) {
+								hide_mouse_cursor();
+								check_update = true;
 								break;
+							}
 							else {
 								cout << "\r\033[31mConnection failed... Try again in 2.5 second... number of connection attempts: " << conection_attemps << "              \033[0m" << flush;
 								conection_attemps++;
 							}
 						}
 					}
-					else {
+					else
+						check_update = true;
+					if (check_update) {
 						if (!test) {
 							if (td_year <= 2099) {
 								if (check_for_updates() == 0) {
@@ -945,13 +953,16 @@ int main() {
 								}
 								else if (check_for_updates() == -1) {
 									int conection_attemps = 0;
+									show_mouse_cursor();
 									clear();
 									cout << loading_string;
-									cout << "\033[31mTrying again to check if the version is up to date...\033[0m";
+									cout << "\033[31mTrying again to check if the version is up to date... Check your internet connection...\033[0m";
 									while (true) {
 										pause(2500);
-										if (check_for_updates() == 1)
+										if (check_for_updates() == 1) {
+											hide_mouse_cursor();
 											break;
+										}
 										else if (check_for_updates() == 0) {
 											show_mouse_cursor();
 											clear();
@@ -995,17 +1006,17 @@ int main() {
 						loading_progressbar[i] = '=';
 				}
 			}
-			cout << "\r\033[32mLoading " << loading << "% [" << loading_progressbar << "]\033[0m" << flush;
+			cout << "\r\033[32mLoading " << loading << "% [" << loading_progressbar << "]\033[0m             " << flush;
 		}
 		first_start = false;
 		pause(1000);
-		show_mouse_cursor();
 		if (OST) {
 			off_on = " ON  ";
 			PlaySound(MAKEINTRESOURCE(1), GetModuleHandle(NULL), SND_RESOURCE | SND_LOOP | SND_ASYNC);
 		}
 		else
 			off_on = " OFF ";
+		show_mouse_cursor();
 	}
 	main_menu();
 	if (hMutex != NULL)
@@ -12375,7 +12386,7 @@ void main_menu() {
 				travel_code_text = "|\033[0m\033[48;2;50;50;50mTraveler Menu            8\033[0m\033[36m|\n";
 				cheat_panel = "|\033[0mCheat panel              +\033[36m|\n";
 			}
-			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.8\033[36m ==|\n"		\
+			cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.9\033[36m ==|\n"		\
 				"|\033[0m        Main menu         \033[36m|\n"			\
 				"|==========================|\n"						\
 				"|\033[0mStart                    1\033[36m|\n"			\
@@ -12451,7 +12462,7 @@ void main_menu() {
 					cheat_panel = "|\033[0mГруппа обмана            +\033[36m|\n";
 			}
 			if (!wasted_translate)
-				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.8\033[36m ==|\n"		\
+				cout << "\033[36m|== \033[31mBase_Escape_v3.9.4.9\033[36m ==|\n"		\
 				"|\033[0m       Главное меню       \033[36m|\n"	\
 				"|==========================|\n"							\
 				"|\033[0mСтарт                    1\033[36m|\n"			\
@@ -13262,9 +13273,6 @@ void updet_list() {
 	clear();
 	if (Language)
 		cout << "\033[36m|============ \033[31mList of changes \033[36m============|\n"		\
-		"|\033[33m           Changes in v3.9.4.1           \033[36m|\n"				\
-		"|\033[0m*Redesign of the sub-item: \"Achievements\"\033[36m|\n"			\
-		"|\033[0m*Added explanations to achievements      \033[36m|\n"				\
 		"|\033[33m           Changes in v3.9.4.2           \033[36m|\n"				\
 		"|\033[0m*Code optimization                       \033[36m|\n"				\
 		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
@@ -13282,14 +13290,20 @@ void updet_list() {
 		"|\033[33m           Changes in v3.9.4.7           \033[36m|\n"				\
 		"|\033[0m*Added the ability to change the font    \033[36m|\n"				\
 		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.8           \033[36m|\n"				\
+		"|\033[0m*New fonts added                         \033[36m|\n"				\
+		"|\033[0m*Small visual changes                    \033[36m|\n"				\
+		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
+		"|\033[0m*Stability improvements                  \033[36m|\n"				\
+		"|\033[33m           Changes in v3.9.4.9           \033[36m|\n"				\
+		"|\033[0m*Removed control blocking                \033[36m|\n"				\
+		"|\033[0m*Minor stability improvements            \033[36m|\n"				\
+		"|\033[0m*Fixed some bugs                         \033[36m|\n"				\
 		"|=========================================|\n"								\
 		"|\033[33mPress any key to continue...             \033[36m|\n"				\
-		"|=========================================|\033[0m\n";
+		"|=========================================|\033[0m";
 	else
 		cout << "\033[36m|============= \033[31mСписок изменений \033[36m=============|\n"		\
-		"|\033[33m             Изменения v3.9.4.1             \033[36m|\n"				\
-		"|\033[0m*Редизайн подпункта: \"Достижения\"           \033[36m|\n"				\
-		"|\033[0m*Добавлены пояснения к достижениям          \033[36m|\n"				\
 		"|\033[33m             Изменения v3.9.4.2             \033[36m|\n"				\
 		"|\033[0m*Оптимизация кода                           \033[36m|\n"				\
 		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
@@ -13311,10 +13325,14 @@ void updet_list() {
 		"|\033[0m*Добавлены новые шрифты                     \033[36m|\n"				\
 		"|\033[0m*Небольшие визуальные изменения             \033[36m|\n"				\
 		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
-		"|\033[0m*Удучшения стабильности                     \033[36m|\n"				\
+		"|\033[0m*Улучшения стабильности                     \033[36m|\n"				\
+		"|\033[33m             Изменения v3.9.4.9             \033[36m|\n"				\
+		"|\033[0m*Удалено блокирование управления            \033[36m|\n"				\
+		"|\033[0m*Незначительные улучшения стабильности      \033[36m|\n"				\
+		"|\033[0m*Исправлены некоторые ошибки                \033[36m|\n"				\
 		"|============================================|\n"								\
 		"|\033[33mНажмите любую клавишу для продолжения...    \033[36m|\n"				\
-		"|============================================|\033[0m\n";
+		"|============================================|\033[0m";
 	wait();
 }
 //достижения
@@ -14531,15 +14549,10 @@ void create_folder() {
 	}
 }
 //скрытие курсора мыши
-void hide_mouse_cursor() {
-	GetCursorPos(&p);
-	SetCursorPos(0, 900000000);
-	BlockInput(true);
-}
+void hide_mouse_cursor() {}
 //показ курсора мыши
 void show_mouse_cursor() {
-	SetCursorPos(p.x, p.y);
-	BlockInput(false);
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
 }
 //скрытие курсора
 void hide_cursor() {
